@@ -135,20 +135,30 @@ function createOrgs() {
     fi
     infoln "Generating certificates using cryptogen tool"
 
-    infoln "Creating Org1 Identities"
+    infoln "Creating Manufacturer Identities"
 
     set -x
-    cryptogen generate --config=./organizations/cryptogen/crypto-config-org1.yaml --output="organizations"
+    cryptogen generate --config=./organizations/cryptogen/crypto-config-manufacturer.yaml --output="organizations"
     res=$?
     { set +x; } 2>/dev/null
     if [ $res -ne 0 ]; then
       fatalln "Failed to generate certificates..."
     fi
 
-    infoln "Creating Org2 Identities"
+    infoln "Creating Vendor Identities"
 
     set -x
-    cryptogen generate --config=./organizations/cryptogen/crypto-config-org2.yaml --output="organizations"
+    cryptogen generate --config=./organizations/cryptogen/crypto-config-vendor.yaml --output="organizations"
+    res=$?
+    { set +x; } 2>/dev/null
+    if [ $res -ne 0 ]; then
+      fatalln "Failed to generate certificates..."
+    fi
+
+    infoln "Creating Airline Identities"
+
+    set -x
+    cryptogen generate --config=./organizations/cryptogen/crypto-config-airline.yaml --output="organizations"
     res=$?
     { set +x; } 2>/dev/null
     if [ $res -ne 0 ]; then
@@ -176,20 +186,24 @@ function createOrgs() {
 
   while :
     do
-      if [ ! -f "organizations/fabric-ca/org1/tls-cert.pem" ]; then
+      if [ ! -f "organizations/fabric-ca/manufacturer/tls-cert.pem" ]; then
         sleep 1
       else
         break
       fi
     done
 
-    infoln "Creating Org1 Identities"
+    infoln "Creating Manufacturer Identities"
 
-    createOrg1
+    createManufacturer
 
-    infoln "Creating Org2 Identities"
+    infoln "Creating Vendor Identities"
 
-    createOrg2
+    createVendor
+
+    infoln "Creating Airline Identities"
+
+    createAirline
 
     infoln "Creating Orderer Org Identities"
 
@@ -197,7 +211,7 @@ function createOrgs() {
 
   fi
 
-  infoln "Generating CCP files for Org1 and Org2"
+  infoln "Generating CCP files for Manufacturer, Vendor, and Airline"
   ./organizations/ccp-generate.sh
 }
 

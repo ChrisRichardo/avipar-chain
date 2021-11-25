@@ -6,13 +6,13 @@ app.use(bodyParser.json());
 const { Gateway,Wallets } = require('fabric-network');
 const path = require('path');
 const fs = require('fs');
-//const ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'org1.example.com', 'connection-org1.json');
+//const ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'manufacturer.example.com', 'connection-manufacturer.json');
   //      const ccp = JSON.parse(fs.readFileSync(ccpPath, 'utf8'));
 
 
 app.get('/api/queryalltransactions', async function (req, res)  {
     try {
-const ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'org1.example.com', 'connection-org1.json');
+const ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'manufacturer.example.com', 'connection-manufacturer.json');
         const ccp = JSON.parse(fs.readFileSync(ccpPath, 'utf8'));
 // Create a new file system based wallet for managing identities.
         const walletPath = path.join(process.cwd(), 'wallet');
@@ -52,7 +52,7 @@ const ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizatio
 
 app.get('/api/queryallcounters', async function (req, res)  {
         try {
-    const ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'org1.example.com', 'connection-org1.json');
+    const ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'manufacturer.example.com', 'connection-manufacturer.json');
             const ccp = JSON.parse(fs.readFileSync(ccpPath, 'utf8'));
     // Create a new file system based wallet for managing identities.
             const walletPath = path.join(process.cwd(), 'wallet');
@@ -94,7 +94,7 @@ app.get('/api/queryallcounters', async function (req, res)  {
 
 app.get('/api/query/:car_index', async function (req, res) {
     try {
-const ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'org1.example.com', 'connection-org1.json');
+const ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'manufacturer.example.com', 'connection-manufacturer.json');
         const ccp = JSON.parse(fs.readFileSync(ccpPath, 'utf8'));
 // Create a new file system based wallet for managing identities.
         const walletPath = path.join(process.cwd(), 'wallet');
@@ -135,7 +135,7 @@ const ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizatio
 app.post('/api/addcar/', async function (req, res) {
     try {
         console.log('Create Car ApiServer');
-const ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'org1.example.com', 'connection-org1.json');
+const ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'manufacturer.example.com', 'connection-manufacturer.json');
         const ccp = JSON.parse(fs.readFileSync(ccpPath, 'utf8'));
 // Create a new file system based wallet for managing identities.
         const walletPath = path.join(process.cwd(), 'wallet');
@@ -176,7 +176,7 @@ const ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizatio
 
 app.put('/api/changeowner/:car_index', async function (req, res) {
     try {
-const ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'org1.example.com', 'connection-org1.json');
+const ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'manufacturer.example.com', 'connection-manufacturer.json');
         const ccp = JSON.parse(fs.readFileSync(ccpPath, 'utf8'));
 // Create a new file system based wallet for managing identities.
         const walletPath = path.join(process.cwd(), 'wallet');
@@ -215,7 +215,7 @@ const ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizatio
 
 app.get('/api/incrementCarCounter', async function (req, res)  {
         try {
-    const ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'org1.example.com', 'connection-org1.json');
+    const ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'manufacturer.example.com', 'connection-manufacturer.json');
             const ccp = JSON.parse(fs.readFileSync(ccpPath, 'utf8'));
     // Create a new file system based wallet for managing identities.
             const walletPath = path.join(process.cwd(), 'wallet');
@@ -255,7 +255,7 @@ app.get('/api/incrementCarCounter', async function (req, res)  {
 
     app.get('/api/initCars', async function (req, res)  {
         try {
-    const ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'org1.example.com', 'connection-org1.json');
+    const ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'manufacturer.example.com', 'connection-manufacturer.json');
             const ccp = JSON.parse(fs.readFileSync(ccpPath, 'utf8'));
     // Create a new file system based wallet for managing identities.
             const walletPath = path.join(process.cwd(), 'wallet');

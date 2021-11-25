@@ -23,14 +23,14 @@ createChannelGenesisBlock() {
 		fatalln "configtxgen tool not found."
 	fi
 	set -x
-	configtxgen -profile TwoOrgsApplicationGenesis -outputBlock ./channel-artifacts/${CHANNEL_NAME}.block -channelID $CHANNEL_NAME
+	configtxgen -profile ThreeOrgsApplicationGenesis -outputBlock ./channel-artifacts/${CHANNEL_NAME}.block -channelID $CHANNEL_NAME
 	res=$?
 	{ set +x; } 2>/dev/null
   verifyResult $res "Failed to generate channel configuration transaction..."
 }
 
 createChannel() {
-	setGlobals 1
+	setGlobals Manufacturer
 	# Poll in case the raft leader is not set yet
 	local rc=1
 	local COUNTER=1
@@ -102,6 +102,6 @@ setAnchorPeer Manufacturer
 infoln "Setting anchor peer for Vendor..."
 setAnchorPeer Vendor
 infoln "Setting anchor peer for Supplier..."
-setAnchorPeer Supplier
+setAnchorPeer Airline
 
 successln "Channel '$CHANNEL_NAME' joined"

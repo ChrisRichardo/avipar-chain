@@ -152,7 +152,7 @@ approveForMyOrg() {
   ORG=$1
   setGlobals $ORG
   set -x
-  peer lifecycle chaincode approveformyorg -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile "$ORDERER_CA" --channelID $CHANNEL_NAME --name ${CC_NAME} --version ${CC_VERSION} --package-id ${PACKAGE_ID} --sequence ${CC_SEQUENCE} ${INIT_REQUIRED} ${CC_END_POLICY} ${CC_COLL_CONFIG} >&log.txt
+  peer lifecycle chaincode approveformyorg -o localhost:6050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile "$ORDERER_CA" --channelID $CHANNEL_NAME --name ${CC_NAME} --version ${CC_VERSION} --package-id ${PACKAGE_ID} --sequence ${CC_SEQUENCE} ${INIT_REQUIRED} ${CC_END_POLICY} ${CC_COLL_CONFIG} >&log.txt
   res=$?
   { set +x; } 2>/dev/null
   cat log.txt
@@ -201,7 +201,7 @@ commitChaincodeDefinition() {
   # peer (if join was successful), let's supply it directly as we know
   # it using the "-o" option
   set -x
-  peer lifecycle chaincode commit -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile "$ORDERER_CA" --channelID $CHANNEL_NAME --name ${CC_NAME} "${PEER_CONN_PARMS[@]}" --version ${CC_VERSION} --sequence ${CC_SEQUENCE} ${INIT_REQUIRED} ${CC_END_POLICY} ${CC_COLL_CONFIG} >&log.txt
+  peer lifecycle chaincode commit -o localhost:6050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile "$ORDERER_CA" --channelID $CHANNEL_NAME --name ${CC_NAME} "${PEER_CONN_PARMS[@]}" --version ${CC_VERSION} --sequence ${CC_SEQUENCE} ${INIT_REQUIRED} ${CC_END_POLICY} ${CC_COLL_CONFIG} >&log.txt
   res=$?
   { set +x; } 2>/dev/null
   cat log.txt
@@ -249,7 +249,7 @@ chaincodeInvokeInit() {
   set -x
   fcn_call='{"function":"'${CC_INIT_FCN}'","Args":[]}'
   infoln "invoke fcn call:${fcn_call}"
-  peer chaincode invoke -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile "$ORDERER_CA" -C $CHANNEL_NAME -n ${CC_NAME} "${PEER_CONN_PARMS[@]}" --isInit -c ${fcn_call} >&log.txt
+  peer chaincode invoke -o localhost:6050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile "$ORDERER_CA" -C $CHANNEL_NAME -n ${CC_NAME} "${PEER_CONN_PARMS[@]}" --isInit -c ${fcn_call} >&log.txt
   res=$?
   { set +x; } 2>/dev/null
   cat log.txt
@@ -286,44 +286,59 @@ chaincodeQuery() {
 ## package the chaincode
 packageChaincode
 
-## Install chaincode on peer0.org1 and peer0.org2
-infoln "Installing chaincode on peer0.org1..."
-installChaincode 1
-infoln "Install chaincode on peer0.org2..."
-installChaincode 2
+## Install chaincode on peer0.manufacturer, peer0.vendor, and peer0.airline
+infoln "Installing chaincode on peer0.manufacturer..."
+installChaincode Manufacturer
+infoln "Install chaincode on peer0.vendor..."
+installChaincode Vendor
+infoln "Install chaincode on peer0.airline..."
+installChaincode Airline
 
 ## query whether the chaincode is installed
-queryInstalled 1
+queryInstalled Manufacturer
 
-## approve the definition for org1
-approveForMyOrg 1
+## approve the definition for Manufacturer
+approveForMyOrg Manufacturer
 
 ## check whether the chaincode definition is ready to be committed
 ## expect org1 to have approved and org2 not to
-checkCommitReadiness 1 "\"Org1MSP\": true" "\"Org2MSP\": false"
-checkCommitReadiness 2 "\"Org1MSP\": true" "\"Org2MSP\": false"
+checkCommitReadiness Manufacturer "\"ManufacturerMSP\": true" "\"VendorMSP\": false" "\"AirlineMSP\": false"
+checkCommitReadiness Vendor "\"ManufacturerMSP\": true" "\"VendorMSP\": false" "\"AirlineMSP\": false"
+checkCommitReadiness Airline "\"ManufacturerMSP\": true" "\"VendorMSP\": false" "\"AirlineMSP\": false"
 
-## now approve also for org2
-approveForMyOrg 2
+## now approve also for Vendor
+approveForMyOrg Vendor
 
 ## check whether the chaincode definition is ready to be committed
 ## expect them both to have approved
-checkCommitReadiness 1 "\"Org1MSP\": true" "\"Org2MSP\": true"
-checkCommitReadiness 2 "\"Org1MSP\": true" "\"Org2MSP\": true"
+checkCommitReadiness Manufacturer "\"ManufacturerMSP\": true" "\"VendorMSP\": true" "\"AirlineMSP\": false"
+checkCommitReadiness Vendor "\"ManufacturerMSP\": true" "\"VendorMSP\": true" "\"AirlineMSP\": false"
+checkCommitReadiness Airline "\"ManufacturerMSP\": true" "\"VendorMSP\": true" "\"AirlineMSP\": false"
+
+
+## now approve also for Airline
+approveForMyOrg Airline
+
+## check whether the chaincode definition is ready to be committed
+## expect them both to have approved
+checkCommitReadiness Manufacturer "\"ManufacturerMSP\": true" "\"VendorMSP\": true" "\"AirlineMSP\": true"
+checkCommitReadiness Vendor "\"ManufacturerMSP\": true" "\"VendorMSP\": true" "\"AirlineMSP\": true"
+checkCommitReadiness Airline "\"ManufacturerMSP\": true" "\"VendorMSP\": true" "\"AirlineMSP\": true"
 
 ## now that we know for sure both orgs have approved, commit the definition
-commitChaincodeDefinition 1 2
+commitChaincodeDefinition Manufacturer Vendor Airline
 
 ## query on both orgs to see that the definition committed successfully
-queryCommitted 1
-queryCommitted 2
+queryCommitted Manufacturer
+queryCommitted Vendor
+queryCommitted Airline
 
 ## Invoke the chaincode - this does require that the chaincode have the 'initLedger'
 ## method defined
 if [ "$CC_INIT_FCN" = "NA" ]; then
   infoln "Chaincode initialization is not required"
 else
-  chaincodeInvokeInit 1 2
+  chaincodeInvokeInit Manufacturer Vendor Airline
 fi
 
 exit 0

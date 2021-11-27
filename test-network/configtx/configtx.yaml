@@ -52,7 +52,7 @@ Organizations:
         # ID to load the MSP definition as
         ID: ManufacturerMSP
 
-        MSPDir: ../organizations/peerOrganizations/Manufacturer.example.com/msp
+        MSPDir: ../organizations/peerOrganizations/manufacturer.example.com/msp
 
         # Policies defines the set of policies at this level of the config tree
         # For organization policies, their canonical path is usually
@@ -79,7 +79,7 @@ Organizations:
         # ID to load the MSP definition as
         ID: VendorMSP
 
-        MSPDir: ../organizations/peerOrganizations/Vendor.example.com/msp
+        MSPDir: ../organizations/peerOrganizations/vendor.example.com/msp
 
         # Policies defines the set of policies at this level of the config tree
         # For organization policies, their canonical path is usually
@@ -106,7 +106,7 @@ Organizations:
         # ID to load the MSP definition as
         ID: AirlineMSP
 
-        MSPDir: ../organizations/peerOrganizations/Airline.example.com/msp
+        MSPDir: ../organizations/peerOrganizations/airline.example.com/msp
 
         # Policies defines the set of policies at this level of the config tree
         # For organization policies, their canonical path is usually

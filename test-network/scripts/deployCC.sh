@@ -295,7 +295,7 @@ infoln "Install chaincode on peer0.airline..."
 installChaincode Airline
 
 ## query whether the chaincode is installed
-queryInstalled Manufacturer
+queryInstalled Airline
 
 ## approve the definition for Manufacturer
 approveForMyOrg Manufacturer
@@ -327,6 +327,7 @@ checkCommitReadiness Airline "\"ManufacturerMSP\": true" "\"VendorMSP\": true" "
 
 ## now that we know for sure both orgs have approved, commit the definition
 commitChaincodeDefinition Manufacturer Vendor Airline
+infoln "Commit suceed"
 
 ## query on both orgs to see that the definition committed successfully
 queryCommitted Manufacturer

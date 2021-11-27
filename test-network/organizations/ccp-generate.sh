@@ -45,7 +45,7 @@ echo "$(json_ccp $ORG $P0PORT $CAPORT $PEERPEM $CAPEM)" > organizations/peerOrga
 echo "$(yaml_ccp $ORG $P0PORT $CAPORT $PEERPEM $CAPEM)" > organizations/peerOrganizations/vendor.example.com/connection-vendor.yaml
 
 ORG=Airline
-P0PORT=9051
+P0PORT=8051
 CAPORT=8054
 PEERPEM=organizations/peerOrganizations/airline.example.com/tlsca/tlsca.airline.example.com-cert.pem
 CAPEM=organizations/peerOrganizations/airline.example.com/ca/ca.airline.example.com-cert.pem

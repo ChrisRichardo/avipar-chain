@@ -16,11 +16,14 @@ async function main() {
         // load the network configuration
         const ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'manufacturer.example.com', 'connection-manufacturer.json');
         const ccp = JSON.parse(fs.readFileSync(ccpPath, 'utf8'));
+        console.log(`TestCcp ${ccp}`);
 
         // Create a new CA client for interacting with the CA.
-        const caInfo = ccp.certificateAuthorities['ca.manufacturer.example.com'];
+        const caInfo = ccp.certificateAuthorities['ca.orgManufacturer.example.com'];
+        console.log(`TestCa ${caInfo}`);
         const caTLSCACerts = caInfo.tlsCACerts.pem;
         const ca = new FabricCAServices(caInfo.url, { trustedRoots: caTLSCACerts, verify: false }, caInfo.caName);
+        console.log("TestB")
 
         // Create a new file system based wallet for managing identities.
         const walletPath = path.join(process.cwd(), 'wallet');
@@ -41,7 +44,7 @@ async function main() {
                 certificate: enrollment.certificate,
                 privateKey: enrollment.key.toBytes(),
             },
-            mspId: 'ManufacturerMSP',
+            mspId: 'OrgManufacturerMSP',
             type: 'X.509',
         };
         await wallet.put('admin', x509Identity);

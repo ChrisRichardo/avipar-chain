@@ -6,7 +6,7 @@
 
 
 # default to using Org1
-ORG=${1:-Org1}
+ORG=${1:-Manufacturer}
 
 # Exit on first error, print all commands.
 set -e
@@ -16,24 +16,31 @@ set -o pipefail
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
 ORDERER_CA=${DIR}/test-network/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem
-PEER0_ORG1_CA=${DIR}/test-network/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
-PEER0_ORG2_CA=${DIR}/test-network/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt
-PEER0_ORG3_CA=${DIR}/test-network/organizations/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/tls/ca.crt
+PEER0_MANUFACTURER_CA=${DIR}/test-network/organizations/peerOrganizations/manufacturer.example.com/peers/peer0.manufacturer.example.com/tls/ca.crt
+PEER0_VENDOR_CA=${DIR}/test-network/organizations/peerOrganizations/vendor.example.com/peers/peer0.vendor.example.com/tls/ca.crt
+PEER0_AIRLINE_CA=${DIR}/test-network/organizations/peerOrganizations/airline.example.com/peers/peer0.airline.example.com/tls/ca.crt
 
 
-if [[ ${ORG,,} == "org1" || ${ORG,,} == "digibank" ]]; then
+if [ ${ORG,,} == "manufacturer"]; then
 
-   CORE_PEER_LOCALMSPID=Org1MSP
-   CORE_PEER_MSPCONFIGPATH=${DIR}/test-network/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp
+   CORE_PEER_LOCALMSPID=ManufacturerMSP
+   CORE_PEER_MSPCONFIGPATH=${DIR}/test-network/organizations/peerOrganizations/manufacturer.example.com/users/Admin@manufacturer.example.com/msp
+   CORE_PEER_ADDRESS=localhost:6051
+   CORE_PEER_TLS_ROOTCERT_FILE=${DIR}/test-network/organizations/peerOrganizations/manufacturer.example.com/peers/peer0.manufacturer.example.com/tls/ca.crt
+
+elif [ ${ORG,,} == "vendor"]; then
+
+   CORE_PEER_LOCALMSPID=VendorMSP
+   CORE_PEER_MSPCONFIGPATH=${DIR}/test-network/organizations/peerOrganizations/vendor.example.com/users/Admin@vendor.example.com/msp
    CORE_PEER_ADDRESS=localhost:7051
-   CORE_PEER_TLS_ROOTCERT_FILE=${DIR}/test-network/organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt
+   CORE_PEER_TLS_ROOTCERT_FILE=${DIR}/test-network/organizations/peerOrganizations/vendor.example.com/peers/peer0.vendor.example.com/tls/ca.crt
 
-elif [[ ${ORG,,} == "org2" || ${ORG,,} == "magnetocorp" ]]; then
+elif [ ${ORG,,} == "airline"]; then
 
-   CORE_PEER_LOCALMSPID=Org2MSP
-   CORE_PEER_MSPCONFIGPATH=${DIR}/test-network/organizations/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp
-   CORE_PEER_ADDRESS=localhost:9051
-   CORE_PEER_TLS_ROOTCERT_FILE=${DIR}/test-network/organizations/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt
+   CORE_PEER_LOCALMSPID=AirlineMSP
+   CORE_PEER_MSPCONFIGPATH=${DIR}/test-network/organizations/peerOrganizations/airline.example.com/users/Admin@airline.example.com/msp
+   CORE_PEER_ADDRESS=localhost:8051
+   CORE_PEER_TLS_ROOTCERT_FILE=${DIR}/test-network/organizations/peerOrganizations/airline.example.com/peers/peer0.airline.example.com/tls/ca.crt
 
 else
    echo "Unknown \"$ORG\", please choose Org1/Digibank or Org2/Magnetocorp"
@@ -48,9 +55,9 @@ fi
 # output the variables that need to be set
 echo "CORE_PEER_TLS_ENABLED=true"
 echo "ORDERER_CA=${ORDERER_CA}"
-echo "PEER0_ORG1_CA=${PEER0_ORG1_CA}"
-echo "PEER0_ORG2_CA=${PEER0_ORG2_CA}"
-echo "PEER0_ORG3_CA=${PEER0_ORG3_CA}"
+echo "PEER0_MANUFACTURER_CA=${PEER0_MANUFACTURER_CA}"
+echo "PEER0_VENDOR_CA=${PEER0_VENDOR_CA}"
+echo "PEER0_AIRLINE_CA=${PEER0_AIRLINE_CA}"
 
 echo "CORE_PEER_MSPCONFIGPATH=${CORE_PEER_MSPCONFIGPATH}"
 echo "CORE_PEER_ADDRESS=${CORE_PEER_ADDRESS}"

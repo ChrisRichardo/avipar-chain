@@ -20,7 +20,6 @@ async function main() {
 
         // Create a new CA client for interacting with the CA.
         const caInfo = ccp.certificateAuthorities['ca.orgManufacturer.example.com'];
-        console.log(`TestCa ${caInfo}`);
         const caTLSCACerts = caInfo.tlsCACerts.pem;
         const ca = new FabricCAServices(caInfo.url, { trustedRoots: caTLSCACerts, verify: false }, caInfo.caName);
         console.log("TestB")
@@ -44,7 +43,7 @@ async function main() {
                 certificate: enrollment.certificate,
                 privateKey: enrollment.key.toBytes(),
             },
-            mspId: 'OrgManufacturerMSP',
+            mspId: 'ManufacturerMSP',
             type: 'X.509',
         };
         await wallet.put('admin', x509Identity);

@@ -13,9 +13,9 @@
     },
     "organizations": {
         "Org${ORG}": {
-            "mspid": "Org${ORG}MSP",
+            "mspid": "${ORG}MSP",
             "peers": [
-                "peer0.org${ORG}.example.com"
+                "peer0.${ORG}.example.com"
             ],
             "certificateAuthorities": [
                 "ca.org${ORG}.example.com"
@@ -23,14 +23,14 @@
         }
     },
     "peers": {
-        "peer0.org${ORG}.example.com": {
+        "peer0.${ORG}.example.com": {
             "url": "grpcs://localhost:${P0PORT}",
             "tlsCACerts": {
                 "pem": "${PEERPEM}"
             },
             "grpcOptions": {
-                "ssl-target-name-override": "peer0.org${ORG}.example.com",
-                "hostnameOverride": "peer0.org${ORG}.example.com"
+                "ssl-target-name-override": "peer0.${ORG}.example.com",
+                "hostnameOverride": "peer0.${ORG}.example.com"
             }
         }
     },

@@ -18,8 +18,9 @@ async function main() {
         const ccp = JSON.parse(fs.readFileSync(ccpPath, 'utf8'));
 
         // Create a new CA client for interacting with the CA.
-        const caURL = ccp.certificateAuthorities['ca.manufacturer.example.com'].url;
+        const caURL = ccp.certificateAuthorities['ca.orgManufacturer.example.com'].url;
         const ca = new FabricCAServices(caURL);
+        console.log(`${ca}`);
 
         // Create a new file system based wallet for managing identities.
         const walletPath = path.join(process.cwd(), 'wallet');
@@ -47,7 +48,7 @@ async function main() {
 
         // Register the user, enroll the user, and import the new identity into the wallet.
         const secret = await ca.register({
-            affiliation: 'manufacturer.department1',
+            affiliation: 'org1.department1',
             enrollmentID: 'appUser',
             role: 'client'
         }, adminUser);

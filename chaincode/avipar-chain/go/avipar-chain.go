@@ -35,7 +35,8 @@ type User struct {
 	Name      string `json:"Name"`
 	User_ID   string `json:"UserID"`
 	Email     string `json:"Email"`
-	User_Type string `json:"UserType"`
+	Org       string `json:"Org"`
+	Role       string `json:"Role"`
 	Address   string `json:"Address"`
 	Password  string `json:"Password"`
 }
@@ -51,6 +52,17 @@ type QueryResult2 struct {
 	Record *CounterNo
 }
 
+type QueryResultUser struct {
+	Key    string `json:"Key"`
+	Record *User
+}
+
+type QueryResultSignIn struct {
+	Key    string `json:"Key"`
+	Record *User
+	Status bool `json:"Status"`
+}
+
 //getCounter to the latest value of the counter based on the Asset Type provided as input parameter
 func getCounter(ctx contractapi.TransactionContextInterface, AssetType string) int {
 	counterAsBytes, _ := ctx.GetStub().GetState(AssetType)
@@ -64,14 +76,14 @@ func getCounter(ctx contractapi.TransactionContextInterface, AssetType string) i
 
 //incrementCounter to the increase value of the counter based on the Asset Type provided as input parameter by 1
 func incrementCounter(ctx contractapi.TransactionContextInterface, AssetType string) int {
-	counterAsBytes, _ := ctx.GetStub().GetState("CarCounterNo")
+	counterAsBytes, _ := ctx.GetStub().GetState(AssetType)
 	counterAsset := CounterNo{}
 
 	json.Unmarshal(counterAsBytes, &counterAsset)
 	counterAsset.Counter++
 	counterAsBytes, _ = json.Marshal(counterAsset)
 
-	err := ctx.GetStub().PutState("CarCounterNo", counterAsBytes)
+	err := ctx.GetStub().PutState(AssetType, counterAsBytes)
 	if err != nil {
 
 		fmt.Sprintf("Failed to Increment Counter")
@@ -91,6 +103,11 @@ func (s *SmartContract) InitCounters(ctx contractapi.TransactionContextInterface
 	}
 	CarCounterBytes, _ := json.Marshal(CarCounter)
 	ctx.GetStub().PutState("CarCounterNo", CarCounterBytes)
+
+	var UserCounter = CounterNo{Counter: 0}
+	UserCounterBytes, _ := json.Marshal(UserCounter)
+	ctx.GetStub().PutState("UserCounterNo", UserCounterBytes)
+		
 
 	return nil
 }
@@ -130,7 +147,7 @@ func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface,
 	// carCounter := getCounter(ctx, "CarCounterNo")
 	// carCounter++
 
-	id,_ := s.IncrementCarCounter(ctx)
+	id:= incrementCounter(ctx,"CarCounterNo")
 
 	car := Asset{
 		ID: "CARA" +  strconv.Itoa(id),
@@ -210,24 +227,93 @@ func (s *SmartContract) QueryAllCars(ctx contractapi.TransactionContextInterface
 	return results, nil
 }
 
+func (s *SmartContract) QueryAllUsers(ctx contractapi.TransactionContextInterface) ([]QueryResultUser, error) {
+	userCounter := getCounter(ctx, "UserCounterNo")
+	userCounter++
 
-// QueryAllCars returns all cars found in world state
-func (s *SmartContract) QueryAllCounters(ctx contractapi.TransactionContextInterface) ([]QueryResult2, error) {
-	results := []QueryResult2{}
+	startKey := "USER0"
+	endKey := "USER" + strconv.Itoa(userCounter)
 
-	counterAsBytes, err := ctx.GetStub().GetState("CarCounterNo")
+	
+	resultsIterator, err := ctx.GetStub().GetStateByRange(startKey, endKey)
+
 	if err != nil {
 		return nil, err
 	}
+	defer resultsIterator.Close()
 
-	counter := new(CounterNo)
-	_ = json.Unmarshal(counterAsBytes, counter)
-	
-	queryResult := QueryResult2{Key: "CarCounterNo", Record: counter}
-	results = append(results, queryResult)
+	results := []QueryResultUser{}
+
+	for resultsIterator.HasNext() {
+		queryResponse, err := resultsIterator.Next()
+
+		if err != nil {
+			return nil, err
+		}
+
+		user := new(User)
+		_ = json.Unmarshal(queryResponse.Value, user)
+
+		queryResult := QueryResultUser{Key: queryResponse.Key, Record: user}
+		results = append(results, queryResult)
+	}
 
 	return results, nil
 }
+
+func (s *SmartContract) QueryUserByEmail(ctx contractapi.TransactionContextInterface, email string) ([]QueryResultUser, error) {
+	indexName := "email~userid"
+
+	resultsIterator, err := ctx.GetStub().GetStateByPartialCompositeKey(indexName, []string{email})
+	if err != nil {
+		return nil, err
+	}
+	defer resultsIterator.Close()
+
+	results := []QueryResultUser{}
+
+	for resultsIterator.HasNext() {
+		queryResponse, _ := resultsIterator.Next()
+
+		_, compositeKeyParts, err := ctx.GetStub().SplitCompositeKey(queryResponse.Key)
+		if err != nil {
+			return nil, fmt.Errorf("Split composite key error")
+		}
+
+		returnedUserId := compositeKeyParts[1]
+
+		userAsBytes, _ := ctx.GetStub().GetState(returnedUserId)
+
+		user := new(User)
+		_ = json.Unmarshal(userAsBytes, user)
+
+		queryResult := QueryResultUser{Key: returnedUserId, Record: user}
+		results = append(results, queryResult)
+	}
+	return results, nil
+}
+
+func (s *SmartContract) SignIn(ctx contractapi.TransactionContextInterface, email string, password string) (*QueryResultSignIn, error) {
+	result := QueryResultSignIn{}
+	result.Status = false
+
+	entitiesUserEmail, _ := s.QueryUserByEmail(ctx, email)
+	if len(entitiesUserEmail) ==  0{
+		return &result, nil
+	}
+
+	result.Record = entitiesUserEmail[0].Record
+	result.Key = entitiesUserEmail[0].Key
+
+	// check if password matched
+	if result.Record.Password != password {
+		return &result,nil
+	}
+	result.Status = true
+	
+	return &result, nil
+}
+
 
 // ChangeCarOwner updates the owner field of car with given id in world state
 func (s *SmartContract) ChangeCarOwner(ctx contractapi.TransactionContextInterface, carNumber string, newOwner string) error {
@@ -244,24 +330,38 @@ func (s *SmartContract) ChangeCarOwner(ctx contractapi.TransactionContextInterfa
 	return ctx.GetStub().PutState(carNumber, carAsBytes)
 }
 
-func (s *SmartContract) IncrementCarCounter(ctx contractapi.TransactionContextInterface) (int,error) {
-	counterAsBytes, _ := ctx.GetStub().GetState("CarCounterNo")
-	counterAsset := CounterNo{}
+func (s *SmartContract) CreateUser(ctx contractapi.TransactionContextInterface, name string, email string, org string, role string, address string, password string) (bool, error) {
+	userCounter := getCounter(ctx, "UserCounterNo")
+	userCounter++
 
-	json.Unmarshal(counterAsBytes, &counterAsset)
-	counterAsset.Counter++
-	counterAsBytes, _ = json.Marshal(counterAsset)
+	indexName := "email~userid"
 
-	err := ctx.GetStub().PutState("CarCounterNo", counterAsBytes)
-	if err != nil {
+	var comAsset = User{Name: name, User_ID: "User" + strconv.Itoa(userCounter), Email: email, Org: org, Role: role, Address: address, Password: password}
+	comAssetAsBytes, _ := json.Marshal(comAsset)
 
-		fmt.Sprintf("Failed to Increment Counter")
+	emailCheck, _ := s.QueryUserByEmail(ctx, email)
+	if len(emailCheck) > 0 {
+		fmt.Printf("Failed to Increment Counter")
 
+		return false, nil;
+	} else {
+		errPut := ctx.GetStub().PutState("USER" + strconv.Itoa(userCounter), comAssetAsBytes)
+		if errPut != nil {
+			return false, fmt.Errorf(fmt.Sprintf("Failed to register user: %s", comAsset.User_ID))
+		}
+
+		emailUseridIndexKey, err := ctx.GetStub().CreateCompositeKey(indexName, []string{comAsset.Email, "USER" + strconv.Itoa(userCounter)})
+		if err != nil {
+			return false, fmt.Errorf(fmt.Sprintf("Failed to create user composite key: %s", comAsset.User_ID))
+		}
+		value := []byte{0x00}
+		ctx.GetStub().PutState(emailUseridIndexKey, value)
+
+		//TO Increment the User Counter
+		incrementCounter(ctx, "UserCounterNo")
+		
+		return true, errPut;
 	}
-
-	fmt.Println("Success in incrementing counter  %v", counterAsset)
-
-	return counterAsset.Counter, nil
 }
 
 

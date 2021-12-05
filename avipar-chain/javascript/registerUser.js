@@ -23,7 +23,7 @@ async function main() {
         console.log(`${ca}`);
 
         // Create a new file system based wallet for managing identities.
-        const walletPath = path.join(process.cwd(), 'wallet');
+        const walletPath = path.join(process.cwd(), 'orgManufacturer-wallet');
         const wallet = await Wallets.newFileSystemWallet(walletPath);
         console.log(`Wallet path: ${walletPath}`);
 
@@ -48,7 +48,7 @@ async function main() {
 
         // Register the user, enroll the user, and import the new identity into the wallet.
         const secret = await ca.register({
-            affiliation: 'org1.department1',
+            affiliation: 'manufacturer.department1',
             enrollmentID: 'appUser',
             role: 'client'
         }, adminUser);

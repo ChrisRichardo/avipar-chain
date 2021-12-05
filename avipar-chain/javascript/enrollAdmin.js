@@ -25,7 +25,7 @@ async function main() {
         console.log("TestB")
 
         // Create a new file system based wallet for managing identities.
-        const walletPath = path.join(process.cwd(), 'wallet');
+        const walletPath = path.join(process.cwd(), 'orgManufacturer-wallet');
         const wallet = await Wallets.newFileSystemWallet(walletPath);
         console.log(`Wallet path: ${walletPath}`);
 

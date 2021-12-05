@@ -15,18 +15,16 @@ app.set('secret', 'aviparsecret');
 app.use(expressJWT({
     secret: 'aviparsecret', algorithms: ['HS256']
 }).unless({
-    path: ['/api/createuser','/users/login', '/register']
+    path: ['/api/createuser','/api/signin', '/register']
 }));
 app.use(bearerToken());
 
-async function getNetwork(){
-        const ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'manufacturer.example.com', 'connection-manufacturer.json');
-        const ccp = JSON.parse(fs.readFileSync(ccpPath, 'utf8'));
-        // Create a new file system based wallet for managing identities.
-        const walletPath = path.join(process.cwd(), 'wallet');
+async function getNetwork(org){
+        let ccp = await helper.getCCP(org);
+
+        const walletPath = await helper.getWalletPath(org)
         const wallet = await Wallets.newFileSystemWallet(walletPath);
         console.log(`Wallet path: ${walletPath}`);
-
         // Check to see if we've already enrolled the user.
         const identity = await wallet.get('appUser');
         if (!identity) {
@@ -52,7 +50,7 @@ async function getNetwork(){
 }
 
 app.use((req, res, next) => {
-        if (req.originalUrl.indexOf('/api/createuser') >= 0 || req.originalUrl.indexOf('/users/login') >= 0 || req.originalUrl.indexOf('/register') >= 0) {
+        if (req.originalUrl.indexOf('/api/createuser') >= 0 || req.originalUrl.indexOf('/api/signin') >= 0 || req.originalUrl.indexOf('/register') >= 0) {
             return next();
         }
         var token = req.token;
@@ -298,7 +296,7 @@ const ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizatio
 
 app.post('/api/signin/', async function (req, res) {
         try {
-            var networkObj = await getNetwork();
+            var networkObj = await getNetwork(req.body.org);
                 
             var resultBuf = await networkObj.contract.submitTransaction('signIn', req.body.email, req.body.password);
             var result= JSON.parse(resultBuf.toString())
@@ -306,7 +304,12 @@ app.post('/api/signin/', async function (req, res) {
             if(result.Status == false){
                 message = "User not existed"
             } else{
-                message = 'Transaction has been submitted';
+                var token = jwt.sign({
+                        exp: Math.floor(Date.now() / 1000) + 30000,
+                        username: req.body.email,
+                        orgName: req.body.org
+                    }, app.get('secret'));                
+                message = req.body.email + ' signed in using ' + token;
             }
             console.log(message);
             res.send(message);
@@ -320,14 +323,14 @@ app.post('/api/signin/', async function (req, res) {
 
 app.post('/api/createuser/', async function (req, res) {
         try {
-            var networkObj = await getNetwork();
-        
+            var networkObj = await getNetwork(req.body.org);
+
             var result = await networkObj.contract.submitTransaction('createUser', req.body.name, req.body.email, req.body.org, req.body.role, req.body.address, req.body.password);
             var message;
             if(result.toString() == "false"){
                 message = "User existed";
             } else{
-                var registeredUserEmail = await helper.registerAndEnrollUser(req.body.email, req.body.org);
+                var registeredUserEmail = await helper.registerUser(req.body.email, req.body.org);
                 var token = jwt.sign({
                         exp: Math.floor(Date.now() / 1000) + 30000,
                         username: registeredUserEmail,

@@ -242,10 +242,11 @@ ldap:
 # which are always stored in lower case.
 #############################################################################
 affiliations:
-   org1:
+   manufacturer:
       - department1
-      - department2
-   org2:
+   vendor:
+      - department1
+   airline:
       - department1
 
 #############################################################################

@@ -27,8 +27,6 @@ type Asset struct {
 	SparepartNumber  string `json:"SparepartNumber"`
 	SparepartName 	 string `json:"SparepartName"`
 	PIC          	 string `json:"PIC"`
-	From          	 string `json:"From"`
-	To          	 string `json:"To"`
 }
 
 type User struct {
@@ -42,7 +40,7 @@ type User struct {
 }
 
 // QueryResult structure used for handling result of query
-type QueryResult struct {
+type QueryResultAsset struct {
 	Key    string `json:"Key"`
 	Record *Asset
 }
@@ -102,7 +100,7 @@ func (s *SmartContract) InitCounters(ctx contractapi.TransactionContextInterface
 		Counter: 3,
 	}
 	CarCounterBytes, _ := json.Marshal(CarCounter)
-	ctx.GetStub().PutState("CarCounterNo", CarCounterBytes)
+	ctx.GetStub().PutState("AssetCounterNo", CarCounterBytes)
 
 	var UserCounter = CounterNo{Counter: 0}
 	UserCounterBytes, _ := json.Marshal(UserCounter)
@@ -115,9 +113,9 @@ func (s *SmartContract) InitCounters(ctx contractapi.TransactionContextInterface
 func (s *SmartContract) InitCars(ctx contractapi.TransactionContextInterface) error {
 
 	cars := []Asset{
-		{ID: "po1", SparepartNumber: "888-1234-123", SparepartName: "Brake", PIC: "Nadeem Abdur Rasheed", From: "A", To: "B"},
-		{ID: "po2", SparepartNumber: "888-1234-123", SparepartName: "Brake", PIC: "Christopher Richardo", From: "B", To: "C"},
-		{ID: "po3", SparepartNumber: "777-1234-111", SparepartName: "Front Wheel", PIC: "TB. Naufal Arya Maulana", From: "C", To: "B"},
+		{ID: "po1", SparepartNumber: "888-1234-123", SparepartName: "Brake", PIC: "Nadeem Abdur Rasheed"},
+		{ID: "po2", SparepartNumber: "888-1234-123", SparepartName: "Brake", PIC: "Christopher Richardo"},
+		{ID: "po3", SparepartNumber: "777-1234-111", SparepartName: "Front Wheel", PIC: "TB. Naufal Arya Maulana"},
 	}
 
 	for i, car := range cars {
@@ -141,26 +139,24 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 	return nil
 }
 
-// CreateCar adds a new car to the world state with given details
-func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface, carNumber string, make string, model string, colour string, ownerID string) error {
-	fmt.Printf("Test Create Car")
-	// carCounter := getCounter(ctx, "CarCounterNo")
-	// carCounter++
+// CreateAsset adds a new car to the world state with given details
+func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface, number string, name string, owner string) (*Asset, error) {
+	assetCounter := getCounter(ctx, "AssetCounterNo")
+	assetCounter++
 
-	id:= incrementCounter(ctx,"CarCounterNo")
-
-	car := Asset{
-		ID: "CARA" +  strconv.Itoa(id),
-		SparepartNumber:   make,
-		SparepartName:  model,
-		PIC: colour,
-		From: ownerID,
-		To: make,
+	asset := Asset{
+		ID: "Asset" +  strconv.Itoa(assetCounter),
+		SparepartNumber:   number,
+		SparepartName:  name,
+		PIC: owner,
 	}
 
-	carAsBytes, _ := json.Marshal(car)
+	assetAsBytes, _ := json.Marshal(asset)
+	errPut := ctx.GetStub().PutState("ASSET" + strconv.Itoa(assetCounter), assetAsBytes)
 
-	return ctx.GetStub().PutState(carNumber, carAsBytes)
+	incrementCounter(ctx, "AssetCounterNo")
+	
+	return &asset, errPut
 }
 
 // QueryCar returns the car stored in the world state with given id
@@ -182,14 +178,12 @@ func (s *SmartContract) QueryCar(ctx contractapi.TransactionContextInterface, ca
 }
 
 // QueryAllCars returns all cars found in world state
-func (s *SmartContract) QueryAllCars(ctx contractapi.TransactionContextInterface) ([]QueryResult, error) {
+func (s *SmartContract) QueryAllAssets(ctx contractapi.TransactionContextInterface) ([]QueryResultAsset, error) {
+	assetCounter := getCounter(ctx, "AssetCounterNo")
+	assetCounter++
+
 	startKey := "ASSET0"
-	endKey := "ASSET8"
-
-	carCounter := getCounter(ctx, "CarCounterNo")
-	carCounter++
-
-	incrementCounter(ctx, "CarCounterNo")
+	endKey := "ASSET" + strconv.Itoa(assetCounter)
 
 	resultsIterator, err := ctx.GetStub().GetStateByRange(startKey, endKey)
 
@@ -198,7 +192,7 @@ func (s *SmartContract) QueryAllCars(ctx contractapi.TransactionContextInterface
 	}
 	defer resultsIterator.Close()
 
-	results := []QueryResult{}
+	results := []QueryResultAsset{}
 
 	for resultsIterator.HasNext() {
 		queryResponse, err := resultsIterator.Next()
@@ -207,22 +201,12 @@ func (s *SmartContract) QueryAllCars(ctx contractapi.TransactionContextInterface
 			return nil, err
 		}
 
-		car := new(Asset)
-		_ = json.Unmarshal(queryResponse.Value, car)
+		asset := new(Asset)
+		_ = json.Unmarshal(queryResponse.Value, asset)
 
-		queryResult := QueryResult{Key: queryResponse.Key, Record: car}
+		queryResult := QueryResultAsset{Key: queryResponse.Key, Record: asset}
 		results = append(results, queryResult)
 	}
-
-	counterAsBytes, err := ctx.GetStub().GetState("CarCounterNo")
-	if err != nil {
-		return nil, err
-	}
-
-	counter := new(CounterNo)
-	_ = json.Unmarshal(counterAsBytes, counter)
-
-	fmt.Printf("Car Counter No is : $d", counter.Counter)
 
 	return results, nil
 }
@@ -234,7 +218,6 @@ func (s *SmartContract) QueryAllUsers(ctx contractapi.TransactionContextInterfac
 	startKey := "USER0"
 	endKey := "USER" + strconv.Itoa(userCounter)
 
-	
 	resultsIterator, err := ctx.GetStub().GetStateByRange(startKey, endKey)
 
 	if err != nil {
@@ -310,7 +293,7 @@ func (s *SmartContract) SignIn(ctx contractapi.TransactionContextInterface, emai
 		return &result,nil
 	}
 	result.Status = true
-	
+
 	return &result, nil
 }
 

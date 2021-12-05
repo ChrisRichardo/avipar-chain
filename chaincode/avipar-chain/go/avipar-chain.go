@@ -140,9 +140,11 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 }
 
 // CreateAsset adds a new car to the world state with given details
-func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface, number string, name string, owner string) (*Asset, error) {
+func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface, number string, name string, owner string) (bool, error) {
 	assetCounter := getCounter(ctx, "AssetCounterNo")
 	assetCounter++
+
+	indexName := "owner~assetid"
 
 	asset := Asset{
 		ID: "Asset" +  strconv.Itoa(assetCounter),
@@ -150,31 +152,31 @@ func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface,
 		SparepartName:  name,
 		PIC: owner,
 	}
-
 	assetAsBytes, _ := json.Marshal(asset)
-	errPut := ctx.GetStub().PutState("ASSET" + strconv.Itoa(assetCounter), assetAsBytes)
 
-	incrementCounter(ctx, "AssetCounterNo")
-	
-	return &asset, errPut
-}
+	//assetCheck, _ := s.QueryAssetByNumber(ctx, number)
+	assetCheck := []string {};
+	if len(assetCheck) > 0 {
+		fmt.Printf("Failed to Increment Counter")
 
-// QueryCar returns the car stored in the world state with given id
-func (s *SmartContract) QueryCar(ctx contractapi.TransactionContextInterface, carNumber string) (*Asset, error) {
-	carAsBytes, err := ctx.GetStub().GetState(carNumber)
+		return false, nil;
+	} else {
+		errPut := ctx.GetStub().PutState("ASSET" + strconv.Itoa(assetCounter), assetAsBytes)
+		if errPut != nil {
+			return false, fmt.Errorf(fmt.Sprintf("Failed to create asset: %s", asset.SparepartNumber))
+		}
 
-	if err != nil {
-		return nil, fmt.Errorf("Failed to read from world state. %s", err.Error())
+		indexKey, err := ctx.GetStub().CreateCompositeKey(indexName, []string{asset.PIC, "ASSET" + strconv.Itoa(assetCounter)})
+		if err != nil {
+			return false, fmt.Errorf(fmt.Sprintf("Failed to create asset composite key: %s", asset.SparepartNumber))
+		}
+		value := []byte{0x00}
+		ctx.GetStub().PutState(indexKey, value)
+
+		incrementCounter(ctx, "AssetCounterNo")
+		
+		return true, errPut;
 	}
-
-	if carAsBytes == nil {
-		return nil, fmt.Errorf("%s does not exist", carNumber)
-	}
-
-	car := new(Asset)
-	_ = json.Unmarshal(carAsBytes, car)
-
-	return car, nil
 }
 
 // QueryAllCars returns all cars found in world state
@@ -208,6 +210,38 @@ func (s *SmartContract) QueryAllAssets(ctx contractapi.TransactionContextInterfa
 		results = append(results, queryResult)
 	}
 
+	return results, nil
+}
+
+func (s *SmartContract) QueryAssetByOwner(ctx contractapi.TransactionContextInterface, owner string) ([]QueryResultAsset, error) {
+	indexName := "owner~assetid"
+
+	resultsIterator, err := ctx.GetStub().GetStateByPartialCompositeKey(indexName, []string{owner})
+	if err != nil {
+		return nil, err
+	}
+	defer resultsIterator.Close()
+
+	results := []QueryResultAsset{}
+
+	for resultsIterator.HasNext() {
+		queryResponse, _ := resultsIterator.Next()
+
+		_, compositeKeyParts, err := ctx.GetStub().SplitCompositeKey(queryResponse.Key)
+		if err != nil {
+			return nil, fmt.Errorf("Split composite key error")
+		}
+
+		returnedAssetId := compositeKeyParts[1]
+
+		userAsBytes, _ := ctx.GetStub().GetState(returnedAssetId)
+
+		asset := new(Asset)
+		_ = json.Unmarshal(userAsBytes, asset)
+
+		queryResult := QueryResultAsset{Key: returnedAssetId, Record: asset}
+		results = append(results, queryResult)
+	}
 	return results, nil
 }
 
@@ -300,11 +334,9 @@ func (s *SmartContract) SignIn(ctx contractapi.TransactionContextInterface, emai
 
 // ChangeCarOwner updates the owner field of car with given id in world state
 func (s *SmartContract) ChangeCarOwner(ctx contractapi.TransactionContextInterface, carNumber string, newOwner string) error {
-	car, err := s.QueryCar(ctx, carNumber)
+	//car, err := s.QueryCar(ctx, carNumber)
+	car := Asset{}
 
-	if err != nil {
-		return err
-	}
 
 	car.PIC = newOwner
 

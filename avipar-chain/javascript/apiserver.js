@@ -148,57 +148,19 @@ app.get('/api/queryallcounters', async function (req, res)  {
         }
     });
     
-
-
-app.get('/api/query/:car_index', async function (req, res) {
-    try {
-const ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'manufacturer.example.com', 'connection-manufacturer.json');
-        const ccp = JSON.parse(fs.readFileSync(ccpPath, 'utf8'));
-// Create a new file system based wallet for managing identities.
-        const walletPath = path.join(process.cwd(), 'wallet');
-        const wallet = await Wallets.newFileSystemWallet(walletPath);
-        console.log(`Wallet path: ${walletPath}`);
-
-        // Check to see if we've already enrolled the user.
-        const identity = await wallet.get('appUser');
-        if (!identity) {
-            console.log('An identity for the user "appUser" does not exist in the wallet');
-            console.log('Run the registerUser.js application before retrying');
-            return;
-        }
-  // Create a new gateway for connecting to our peer node.
-        const gateway = new Gateway();
-        await gateway.connect(ccp, { wallet, identity: 'appUser', discovery: { enabled: true, asLocalhost: true } });
-
-        // Get the network (channel) our contract is deployed to.
-        const network = await gateway.getNetwork('mychannel');
-
-        // Get the contract from the network.
-        const contract = network.getContract('fabcar');
-// Evaluate the specified transaction.
-        // queryCar transaction - requires 1 argument, ex: ('queryCar', 'CAR4')
-        // queryAllCars transaction - requires no arguments, ex: ('queryAllCars')
-        const result = await contract.evaluateTransaction('queryCar', req.params.car_index);
-        console.log(`Transaction has been evaluated, result is: ${result.toString()}`);
-        res.status(200).json({response: result.toString()});
-} catch (error) {
-        console.error(`Failed to evaluate transaction: ${error}`);
-        res.status(500).json({error: error});
-        process.exit(1);
-    }
-});
-
-
-
 app.post('/api/asset/add', async function (req, res) {
     try {
         var networkObj = await getNetwork(req.orgname, req.username);
 
         var resultBuf = await networkObj.contract.submitTransaction('createAsset', req.body.number, req.body.name, req.username, req.orgname);
         var result= JSON.parse(resultBuf.toString())
-        console.log(result);
-        console.log('Asset has been created');
-        res.send('Asset has been created');
+        if(result.toString() == "false"){
+                message = "Asset existed";
+        } else{
+                message = "Asset has been created";
+        }
+        console.log(message);
+        res.send(message);
 // Disconnect from the gateway.
         await networkObj.gateway.disconnect();
 } catch (error) {
@@ -207,7 +169,25 @@ app.post('/api/asset/add', async function (req, res) {
     }
 })
 
-
+app.get('/api/queryassetowned', async function (req, res) {
+        try {
+            var networkObj = await getNetwork(req.orgname, req.username);
+            const result = await networkObj.contract.evaluateTransaction('queryAssetByOwner', req.username);
+            var message;
+            if(result.toString() != "[]"){
+                message = `Transaction has been evaluated, result is: ${result.toString()}`;
+            } else{
+                message = "Assets not existed"
+            }
+            console.log(message);
+            res.status(200).json({response: result.toString()});
+    } catch (error) {
+            console.error(`Failed to evaluate transaction: ${error}`);
+            res.status(500).json({error: error});
+            process.exit(1);
+        }
+});
+    
 
 app.put('/api/changeowner/:car_index', async function (req, res) {
     try {

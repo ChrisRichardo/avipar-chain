@@ -179,7 +179,22 @@ func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface,
 	}
 }
 
-// QueryAllCars returns all cars found in world state
+func (s *SmartContract) QueryAsset(ctx contractapi.TransactionContextInterface, assetId string) (*Asset, error) {
+	assetAsBytes, err := ctx.GetStub().GetState(assetId)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to read from world state. %s", err.Error())
+	}
+
+	if assetAsBytes == nil {
+		return nil, fmt.Errorf("%s does not exist", assetId)
+	}
+
+	asset := new(Asset)
+	_ = json.Unmarshal(assetAsBytes, asset)
+
+	return asset, nil
+}
+
 func (s *SmartContract) QueryAllAssets(ctx contractapi.TransactionContextInterface) ([]QueryResultAsset, error) {
 	assetCounter := getCounter(ctx, "AssetCounterNo")
 	assetCounter++
@@ -333,16 +348,17 @@ func (s *SmartContract) SignIn(ctx contractapi.TransactionContextInterface, emai
 
 
 // ChangeCarOwner updates the owner field of car with given id in world state
-func (s *SmartContract) ChangeCarOwner(ctx contractapi.TransactionContextInterface, carNumber string, newOwner string) error {
-	//car, err := s.QueryCar(ctx, carNumber)
-	car := Asset{}
+func (s *SmartContract) TransferAssetOwner(ctx contractapi.TransactionContextInterface, assetId string, newOwner string) error {
+	asset, err := s.QueryAsset(ctx, assetId)
+	if err != nil {
+		return err
+	}
 
+	asset.PIC = newOwner
 
-	car.PIC = newOwner
+	assetAsBytes, _ := json.Marshal(asset)
 
-	carAsBytes, _ := json.Marshal(car)
-
-	return ctx.GetStub().PutState(carNumber, carAsBytes)
+	return ctx.GetStub().PutState(assetId, assetAsBytes)
 }
 
 func (s *SmartContract) CreateUser(ctx contractapi.TransactionContextInterface, name string, email string, org string, role string, address string, password string) (bool, error) {

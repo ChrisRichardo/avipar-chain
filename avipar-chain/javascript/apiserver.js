@@ -189,39 +189,14 @@ app.get('/api/queryassetowned', async function (req, res) {
 });
     
 
-app.put('/api/changeowner/:car_index', async function (req, res) {
+app.put('/api/asset/transfer/:asset_index', async function (req, res) {
     try {
-const ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'manufacturer.example.com', 'connection-manufacturer.json');
-        const ccp = JSON.parse(fs.readFileSync(ccpPath, 'utf8'));
-// Create a new file system based wallet for managing identities.
-        const walletPath = path.join(process.cwd(), 'wallet');
-        const wallet = await Wallets.newFileSystemWallet(walletPath);
-        console.log(`Wallet path: ${walletPath}`);
+        var networkObj = await getNetwork(req.orgname, req.username);
 
-        // Check to see if we've already enrolled the user.
-        const identity = await wallet.get('appUser');
-        if (!identity) {
-            console.log('An identity for the user "appUser" does not exist in the wallet');
-            console.log('Run the registerUser.js application before retrying');
-            return;
-        }
-  // Create a new gateway for connecting to our peer node.
-        const gateway = new Gateway();
-        await gateway.connect(ccp, { wallet, identity: 'appUser', discovery: { enabled: true, asLocalhost: true } });
-
-        // Get the network (channel) our contract is deployed to.
-        const network = await gateway.getNetwork('mychannel'); 
-
-        // Get the contract from the network.
-        const contract = network.getContract('fabcar');
-// Submit the specified transaction.
-        // createCar transaction - requires 5 argument, ex: ('createCar', 'CAR12', 'Honda', 'Accord', 'Black', 'Tom')
-        // changeCarOwner transaction - requires 2 args , ex: ('changeCarOwner', 'CAR10', 'Dave')
-        await contract.submitTransaction('changeCarOwner', req.params.car_index, req.body.owner);
+        await networkObj.contract.submitTransaction('transferAssetOwner', req.params.asset_index, req.body.owner);
         console.log('Transaction has been submitted');
         res.send('Transaction has been submitted');
-// Disconnect from the gateway.
-        await gateway.disconnect();
+        await networkObj.gateway.disconnect();
 } catch (error) {
         console.error(`Failed to submit transaction: ${error}`);
         process.exit(1);
@@ -231,6 +206,7 @@ const ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizatio
 
 app.post('/api/signin/', async function (req, res) {
         try {
+        req.body.org = "manufacturer";
             var networkObj = await getNetwork(req.body.org, req.username);
                 
             var resultBuf = await networkObj.contract.submitTransaction('signIn', req.body.email, req.body.password);
@@ -238,6 +214,7 @@ app.post('/api/signin/', async function (req, res) {
             var message;
             if(result.Status == false){
                 message = "User not existed"
+                res.status(400).json({response: message});
             } else{
                 var token = jwt.sign({
                         exp: Math.floor(Date.now() / 1000) + 30000,
@@ -245,9 +222,10 @@ app.post('/api/signin/', async function (req, res) {
                         orgName: req.body.org
                     }, app.get('secret'));                
                 message = req.body.email + ' signed in using ' + token;
+                res.status(200).json({response: token});
             }
             console.log(message);
-            res.send(message);
+            
     // Disconnect from the gateway.
             await networkObj.gateway.disconnect();
     } catch (error) {
@@ -263,7 +241,8 @@ app.post('/api/createuser/', async function (req, res) {
             var result = await networkObj.contract.submitTransaction('createUser', req.body.name, req.body.email, req.body.org, req.body.role, req.body.address, req.body.password);
             var message;
             if(result.toString() == "false"){
-                message = "User existed";
+                message = "Email existed";
+                res.status(400).json({response: message});
             } else{
                 var registeredUserEmail = await helper.registerUser(req.body.email, req.body.org);
                 var token = jwt.sign({
@@ -273,9 +252,10 @@ app.post('/api/createuser/', async function (req, res) {
                 }, app.get('secret'));
                 
                 message = 'User ' + req.body.email+ ' has been created and the user token is ' + token;
+                res.status(200).json({response: token});
             }
             console.log(message);
-            res.send(message);
+           
     // Disconnect from the gateway.
             await networkObj.gateway.disconnect();
     } catch (error) {

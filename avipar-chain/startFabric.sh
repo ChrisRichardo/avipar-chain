@@ -50,6 +50,6 @@ JavaScript:
     npm install
 
   Finally, execute the api server initiate library:
-    node apiserv
+    node apiserver
 
 EOF

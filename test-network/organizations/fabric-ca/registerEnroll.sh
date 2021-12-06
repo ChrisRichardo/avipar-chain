@@ -13,16 +13,16 @@ function createManufacturer() {
   echo 'NodeOUs:
   Enable: true
   ClientOUIdentifier:
-    Certificate: cacerts/localhost-6054-ca-manufacturer.pem
+    Certificate: cacerts/localhost-6054-ca-orgManufacturer.pem
     OrganizationalUnitIdentifier: client
   PeerOUIdentifier:
-    Certificate: cacerts/localhost-6054-ca-manufacturer.pem
+    Certificate: cacerts/localhost-6054-ca-orgManufacturer.pem
     OrganizationalUnitIdentifier: peer
   AdminOUIdentifier:
-    Certificate: cacerts/localhost-6054-ca-manufacturer.pem
+    Certificate: cacerts/localhost-6054-ca-orgManufacturer.pem
     OrganizationalUnitIdentifier: admin
   OrdererOUIdentifier:
-    Certificate: cacerts/localhost-6054-ca-manufacturer.pem
+    Certificate: cacerts/localhost-6054-ca-orgManufacturer.pem
     OrganizationalUnitIdentifier: orderer' > "${PWD}/organizations/peerOrganizations/manufacturer.example.com/msp/config.yaml"
 
   infoln "Registering peer0"
@@ -93,16 +93,16 @@ function createVendor() {
   echo 'NodeOUs:
   Enable: true
   ClientOUIdentifier:
-    Certificate: cacerts/localhost-7054-ca-vendor.pem
+    Certificate: cacerts/localhost-7054-ca-orgVendor.pem
     OrganizationalUnitIdentifier: client
   PeerOUIdentifier:
-    Certificate: cacerts/localhost-7054-ca-vendor.pem
+    Certificate: cacerts/localhost-7054-ca-orgVendor.pem
     OrganizationalUnitIdentifier: peer
   AdminOUIdentifier:
-    Certificate: cacerts/localhost-7054-ca-vendor.pem
+    Certificate: cacerts/localhost-7054-ca-orgVendor.pem
     OrganizationalUnitIdentifier: admin
   OrdererOUIdentifier:
-    Certificate: cacerts/localhost-7054-ca-vendor.pem
+    Certificate: cacerts/localhost-7054-ca-orgVendor.pem
     OrganizationalUnitIdentifier: orderer' > "${PWD}/organizations/peerOrganizations/vendor.example.com/msp/config.yaml"
 
   infoln "Registering peer0"
@@ -173,16 +173,16 @@ function createAirline() {
   echo 'NodeOUs:
   Enable: true
   ClientOUIdentifier:
-    Certificate: cacerts/localhost-8054-ca-airline.pem
+    Certificate: cacerts/localhost-8054-ca-orgAirline.pem
     OrganizationalUnitIdentifier: client
   PeerOUIdentifier:
-    Certificate: cacerts/localhost-8054-ca-airline.pem
+    Certificate: cacerts/localhost-8054-ca-orgAirline.pem
     OrganizationalUnitIdentifier: peer
   AdminOUIdentifier:
-    Certificate: cacerts/localhost-8054-ca-airline.pem
+    Certificate: cacerts/localhost-8054-ca-orgAirline.pem
     OrganizationalUnitIdentifier: admin
   OrdererOUIdentifier:
-    Certificate: cacerts/localhost-8054-ca-airline.pem
+    Certificate: cacerts/localhost-8054-ca-orgAirline.pem
     OrganizationalUnitIdentifier: orderer' > "${PWD}/organizations/peerOrganizations/airline.example.com/msp/config.yaml"
 
   infoln "Registering peer0"

@@ -27,6 +27,7 @@ type Asset struct {
 	SparepartNumber  string `json:"SparepartNumber"`
 	SparepartName 	 string `json:"SparepartName"`
 	PIC          	 string `json:"PIC"`
+	Status			 string `json:"Status"`
 }
 
 type User struct {
@@ -43,6 +44,13 @@ type User struct {
 type QueryResultAsset struct {
 	Key    string `json:"Key"`
 	Record *Asset
+}
+
+type QueryResultAssets struct {
+	Key    string `json:"Key"`
+	Record []Asset
+	Message string `json:"Message"`
+	Status bool `json:"Status"`
 }
 
 type QueryResult2 struct {
@@ -166,6 +174,7 @@ func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface,
 		SparepartNumber:   number,
 		SparepartName:  name,
 		PIC: owner,
+		Status: "Available",
 	}
 	assetAsBytes, _ := json.Marshal(asset)
 	assetCheck := []string {};
@@ -273,6 +282,32 @@ func (s *SmartContract) QueryAssetByOwner(ctx contractapi.TransactionContextInte
 	return results, nil
 }
 
+func (s *SmartContract) QueryAssetHistory(ctx contractapi.TransactionContextInterface, assetId string) (QueryResultAssets, error) {
+	result := QueryResultAssets{}
+	result.Key = assetId
+	result.Status = false
+
+	resultsIterator, err := ctx.GetStub().GetHistoryForKey(assetId)
+	if err != nil {
+		result.Message = "Can't get history for " + assetId
+		return result, nil
+	}
+	defer resultsIterator.Close()
+
+	for resultsIterator.HasNext() {
+		queryResponse,_ := resultsIterator.Next()
+
+		asset := new(Asset)
+		_ = json.Unmarshal(queryResponse.Value, asset)
+
+		result.Record = append(result.Record, *asset)
+	}
+
+	result.Status = true
+	result.Message = "History for " + assetId + " retrieved"
+	return result, nil
+}
+
 func (s *SmartContract) QueryAllUsers(ctx contractapi.TransactionContextInterface) ([]QueryResultUser, error) {
 	userCounter := getCounter(ctx, "UserCounterNo")
 	userCounter++
@@ -359,8 +394,6 @@ func (s *SmartContract) SignIn(ctx contractapi.TransactionContextInterface, emai
 	return &result, nil
 }
 
-
-// ChangeCarOwner updates the owner field of car with given id in world state
 func (s *SmartContract) TransferAssetOwner(ctx contractapi.TransactionContextInterface, assetId string, newOwner string) (*QueryResultStatusMessage, error) {
 	result := QueryResultStatusMessage{}
 	result.Status = false;

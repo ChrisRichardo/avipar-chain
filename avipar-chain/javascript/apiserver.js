@@ -188,6 +188,26 @@ app.get('/api/queryassetowned', async function (req, res) {
         }
 });
     
+app.get('/api/asset/history/:asset_index', async function (req, res) {
+    try {
+        var networkObj = await getNetwork(req.orgname, req.username);
+
+        var resultBuf = await networkObj.contract.submitTransaction('queryAssetHistory', req.params.asset_index);
+        var result= JSON.parse(resultBuf.toString())
+        if(result.Status == false){
+            res.status(400).json({response: result.Message});
+            console.log(result.Message);
+        } else{        
+            console.log(result.Record);
+            res.status(200).json({response: result.Record});
+            console.log(result.Message);
+        }
+        await networkObj.gateway.disconnect();
+} catch (error) {
+        console.error(`Failed to submit transaction: ${error}`);
+        process.exit(1);
+    } 
+})
 
 app.put('/api/asset/transfer/:asset_index', async function (req, res) {
     try {
@@ -206,7 +226,6 @@ app.put('/api/asset/transfer/:asset_index', async function (req, res) {
         console.error(`Failed to submit transaction: ${error}`);
         process.exit(1);
     } 
-
 })
 
 app.post('/api/signin/', async function (req, res) {

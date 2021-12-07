@@ -61,6 +61,12 @@ type QueryResultSignIn struct {
 	Status bool `json:"Status"`
 }
 
+type QueryResultStatusMessage struct {
+	Key    string `json:"Key"`
+	Message string `json:"Message"`
+	Status bool `json:"Status"`
+}
+
 //getCounter to the latest value of the counter based on the Asset Type provided as input parameter
 func getCounter(ctx contractapi.TransactionContextInterface, AssetType string) int {
 	counterAsBytes, _ := ctx.GetStub().GetState(AssetType)
@@ -97,7 +103,7 @@ func (s *SmartContract) InitCounters(ctx contractapi.TransactionContextInterface
 
 	// Initializing Car Counter
 	var CarCounter = CounterNo{
-		Counter: 3,
+		Counter: 0,
 	}
 	CarCounterBytes, _ := json.Marshal(CarCounter)
 	ctx.GetStub().PutState("AssetCounterNo", CarCounterBytes)
@@ -134,16 +140,25 @@ func (s *SmartContract) InitCars(ctx contractapi.TransactionContextInterface) er
 func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) error {
 	// Initializing Car Counter
 	s.InitCounters(ctx)
-	s.InitCars(ctx)
 	
 	return nil
 }
 
 // CreateAsset adds a new car to the world state with given details
 func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface, number string, name string, owner string) (bool, error) {
+	entitiesUserEmail, _ := s.QueryUserByEmail(ctx, owner)
+	if len(entitiesUserEmail) ==  0{
+		return false, nil
+	}
+	
+	userOrg := entitiesUserEmail[0].Record.Org
+	if userOrg != "manufacturer"{
+		return false, nil
+	}
+
 	assetCounter := getCounter(ctx, "AssetCounterNo")
 	assetCounter++
-
+	
 	indexName := "owner~assetid"
 
 	asset := Asset{
@@ -153,8 +168,6 @@ func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface,
 		PIC: owner,
 	}
 	assetAsBytes, _ := json.Marshal(asset)
-
-	//assetCheck, _ := s.QueryAssetByNumber(ctx, number)
 	assetCheck := []string {};
 	if len(assetCheck) > 0 {
 		fmt.Printf("Failed to Increment Counter")
@@ -348,17 +361,63 @@ func (s *SmartContract) SignIn(ctx contractapi.TransactionContextInterface, emai
 
 
 // ChangeCarOwner updates the owner field of car with given id in world state
-func (s *SmartContract) TransferAssetOwner(ctx contractapi.TransactionContextInterface, assetId string, newOwner string) error {
-	asset, err := s.QueryAsset(ctx, assetId)
+func (s *SmartContract) TransferAssetOwner(ctx contractapi.TransactionContextInterface, assetId string, newOwner string) (*QueryResultStatusMessage, error) {
+	result := QueryResultStatusMessage{}
+	result.Status = false;
+
+	asset, _ := s.QueryAsset(ctx, assetId)
+
+	entitiesUserEmail, _ := s.QueryUserByEmail(ctx, asset.PIC)
+	userOrg := entitiesUserEmail[0].Record.Org
+
+	entitiesNewUserEmail, _ := s.QueryUserByEmail(ctx, newOwner)
+	if len(entitiesNewUserEmail) ==  0{
+		result.Message = "New Owner not existed"
+		return &result, nil
+	}
+
+	newUserOrg := entitiesNewUserEmail[0].Record.Org
+	
+	if userOrg == "manufacturer" && newUserOrg != "vendor"{
+		result.Message = "Only Vendor able to buy from Manufacturer"
+		return &result, nil
+	} else if userOrg == "vendor" && newUserOrg != "mro"{
+		result.Message = "Only MRO able to buy from Vendor"
+		return &result, nil
+
+	} else if userOrg == "mro" && newUserOrg != "airline"{
+		result.Message = "Only Airline able to buy from MRO"
+		return &result, nil
+		
+	} else if userOrg == "airline"{
+		result.Message = "You are not able to buy spare parts from Airline"
+		return &result, nil
+	}
+
+	indexName := "owner~assetid"
+
+	ownerAssetidIndexKey, _ := ctx.GetStub().CreateCompositeKey(indexName, []string{asset.PIC, assetId})
+	err := ctx.GetStub().DelState(ownerAssetidIndexKey)
 	if err != nil {
-		return err
+		result.Message = "Failed to delete composite key " + ownerAssetidIndexKey
+		return &result, nil
 	}
 
 	asset.PIC = newOwner
-
 	assetAsBytes, _ := json.Marshal(asset)
+	ctx.GetStub().PutState(assetId, assetAsBytes)
 
-	return ctx.GetStub().PutState(assetId, assetAsBytes)
+	newOwnerAssetidIndexKey, err := ctx.GetStub().CreateCompositeKey(indexName, []string{asset.PIC, assetId})
+	if err != nil {
+		result.Message = "Failed to create new composite key " + newOwnerAssetidIndexKey
+		return &result, nil
+	}
+	value := []byte{0x00}
+	ctx.GetStub().PutState(newOwnerAssetidIndexKey, value)
+
+	result.Message = "Spare part transfered to " + newOwner
+	result.Status = true
+	return &result, nil
 }
 
 func (s *SmartContract) CreateUser(ctx contractapi.TransactionContextInterface, name string, email string, org string, role string, address string, password string) (bool, error) {

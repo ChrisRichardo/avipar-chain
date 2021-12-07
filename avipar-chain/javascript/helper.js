@@ -18,6 +18,8 @@ const getCCP = async (org) => {
         ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'vendor.example.com', 'connection-vendor.json');
     } else if (org == "airline") {
         ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'airline.example.com', 'connection-airline.json');
+    } else if (org == "mro") {
+        ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'mro.example.com', 'connection-mro.json');
     } else {
         return null
     }
@@ -33,6 +35,8 @@ const getCaInfo = async (org) => {
         caInfo = ccp.certificateAuthorities['ca.orgVendor.example.com'];
     } else if (org == "airline") {
         caInfo = ccp.certificateAuthorities['ca.orgAirline.example.com'];
+    } else if (org == "mro") {
+        caInfo = ccp.certificateAuthorities['ca.orgMRO.example.com'];
     } else
         return null
     return caInfo
@@ -47,7 +51,10 @@ const getCaUrl = async (org, ccp) => {
         caURL = ccp.certificateAuthorities['ca.orgVendor.example.com'].url;
     } else if (org == "airline") {
         caURL = ccp.certificateAuthorities['ca.orgAirline.example.com'].url;
-    }  else{
+    } else if (org == "mro") {
+        caURL = ccp.certificateAuthorities['ca.orgMRO.example.com'].url;
+    } 
+    else{
         return null
     }
     return caURL
@@ -61,18 +68,42 @@ const getWalletPath = async (org) => {
         walletPath = path.join(process.cwd(), 'orgVendor-wallet');
     } else if (org == "airline") {
         walletPath = path.join(process.cwd(), 'orgAirline-wallet');
+    } else if (org == "mro") {
+        walletPath = path.join(process.cwd(), 'orgMRO-wallet');
     } else
         return null
     return walletPath
 }
 
 const getAffiliation = async (org) => {
-    return org == "manufacturer" ? 'manufacturer.department1' : ("vendor" ? 'vendor.department1' : 'airline.department1')
+    let affiliation;
+    if (org == "manufacturer") {
+        affiliation = 'manufacturer.department1';
+    } else if (org == "vendor") {
+        affiliation = 'vendor.department1';
+    } else if (org == "airline") {
+        affiliation = 'airline.department1';
+    } else if (org == "mro") {
+        affiliation = 'mro.department1';
+    } else
+        return null
+    return affiliation;
 }
 
 
 const getMSP = async (org) => {
-    return org == "manufacturer" ? 'ManufacturerMSP' : ("vendor" ? 'VendorMSP' : 'AirlineMSP')
+    let msp;
+    if (org == "manufacturer") {
+        msp = 'ManufacturerMSP';
+    } else if (org == "vendor") {
+        msp = 'VendorMSP';
+    } else if (org == "airline") {
+        msp = 'AirlineMSP';
+    } else if (org == "mro") {
+        msp = 'MROMSP' ;
+    } else
+        return null
+    return msp;
 }
 
 async function registerUser (email, org){

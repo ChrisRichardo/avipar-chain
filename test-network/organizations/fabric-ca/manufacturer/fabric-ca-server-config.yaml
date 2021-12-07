@@ -248,6 +248,8 @@ affiliations:
       - department1
    airline:
       - department1
+   mro:
+      - department1
 
 #############################################################################
 #  Signing section

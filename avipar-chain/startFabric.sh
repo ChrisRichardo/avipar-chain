@@ -25,6 +25,8 @@ fi
 rm -rf javascript/orgManufacturer-wallet/*
 rm -rf javascript/orgVendor-wallet/*
 rm -rf javascript/orgAirline-wallet/*
+rm -rf javascript/orgMRO-wallet/*
+
 
 # launch network; create channel and join peer to channel
 pushd ../test-network

@@ -15,6 +15,7 @@ export ORDERER_CA=${PWD}/organizations/ordererOrganizations/example.com/orderers
 export PEER0_MANUFACTURER_CA=${PWD}/organizations/peerOrganizations/manufacturer.example.com/peers/peer0.manufacturer.example.com/tls/ca.crt
 export PEER0_VENDOR_CA=${PWD}/organizations/peerOrganizations/vendor.example.com/peers/peer0.vendor.example.com/tls/ca.crt
 export PEER0_AIRLINE_CA=${PWD}/organizations/peerOrganizations/airline.example.com/peers/peer0.airline.example.com/tls/ca.crt
+export PEER0_MRO_CA=${PWD}/organizations/peerOrganizations/mro.example.com/peers/peer0.mro.example.com/tls/ca.crt
 export ORDERER_ADMIN_TLS_SIGN_CERT=${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt
 export ORDERER_ADMIN_TLS_PRIVATE_KEY=${PWD}/organizations/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.key
 
@@ -42,6 +43,11 @@ setGlobals() {
     export CORE_PEER_TLS_ROOTCERT_FILE=$PEER0_AIRLINE_CA
     export CORE_PEER_MSPCONFIGPATH=${PWD}/organizations/peerOrganizations/airline.example.com/users/Admin@airline.example.com/msp
     export CORE_PEER_ADDRESS=localhost:8051
+  elif [ "$USING_ORG" == "MRO" ]; then
+    export CORE_PEER_LOCALMSPID="MROMSP"
+    export CORE_PEER_TLS_ROOTCERT_FILE=$PEER0_MRO_CA
+    export CORE_PEER_MSPCONFIGPATH=${PWD}/organizations/peerOrganizations/mro.example.com/users/Admin@mro.example.com/msp
+    export CORE_PEER_ADDRESS=localhost:10051
   else
     errorln "ORG Unknown"
   fi
@@ -67,6 +73,8 @@ setGlobalsCLI() {
     export CORE_PEER_ADDRESS=peer0.vendor.example.com:7051
   elif [ "$USING_ORG" == "Airline" ]; then
     export CORE_PEER_ADDRESS=peer0.airline.example.com:8051
+  elif [ "$USING_ORG" == "MRO" ]; then
+    export CORE_PEER_ADDRESS=peer0.mro.example.com:10051
   else
     errorln "ORG Unknown"
   fi
@@ -98,6 +106,8 @@ parsePeerConnectionParameters() {
       ORG_UPPER="VENDOR"
     elif [ "$1" == "Airline" ]; then
       ORG_UPPER="AIRLINE"
+    elif [ "$1" == "MRO" ]; then
+      ORG_UPPER="MRO"
     fi
     CA=PEER0_${ORG_UPPER}_CA
     TLSINFO=(--tlsRootCertFiles "${!CA}")

@@ -125,6 +125,33 @@ Organizations:
                 Type: Signature
                 Rule: "OR('AirlineMSP.peer')"
 
+    - &MRO
+        # DefaultOrg defines the organization which is used in the sampleconfig
+        # of the fabric.git development environment
+        Name: MROMSP
+
+        # ID to load the MSP definition as
+        ID: MROMSP
+
+        MSPDir: ../organizations/peerOrganizations/mro.example.com/msp
+
+        # Policies defines the set of policies at this level of the config tree
+        # For organization policies, their canonical path is usually
+        #   /Channel/<Application|Orderer>/<OrgName>/<PolicyName>
+        Policies:
+            Readers:
+                Type: Signature
+                Rule: "OR('MROMSP.admin', 'MROMSP.peer', 'MROMSP.client')"
+            Writers:
+                Type: Signature
+                Rule: "OR('MROMSP.admin', 'MROMSP.client')"
+            Admins:
+                Type: Signature
+                Rule: "OR('MROMSP.admin')"
+            Endorsement:
+                Type: Signature
+                Rule: "OR('MROMSP.peer')"
+
 ################################################################################
 #
 #   SECTION: Capabilities
@@ -327,7 +354,7 @@ Channel: &ChannelDefaults
 ################################################################################
 Profiles:
 
-    ThreeOrgsApplicationGenesis:
+    FourOrgsApplicationGenesis:
         <<: *ChannelDefaults
         Orderer:
             <<: *OrdererDefaults
@@ -340,4 +367,5 @@ Profiles:
                 - *Manufacturer
                 - *Vendor
                 - *Airline
+                - *MRO
             Capabilities: *ApplicationCapabilities

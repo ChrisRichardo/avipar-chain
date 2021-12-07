@@ -52,3 +52,12 @@ CAPEM=organizations/peerOrganizations/airline.example.com/ca/ca.airline.example.
 
 echo "$(json_ccp $ORG $P0PORT $CAPORT $PEERPEM $CAPEM)" > organizations/peerOrganizations/airline.example.com/connection-airline.json
 echo "$(yaml_ccp $ORG $P0PORT $CAPORT $PEERPEM $CAPEM)" > organizations/peerOrganizations/airline.example.com/connection-airline.yaml
+
+ORG=MRO
+P0PORT=10051
+CAPORT=10054
+PEERPEM=organizations/peerOrganizations/mro.example.com/tlsca/tlsca.mro.example.com-cert.pem
+CAPEM=organizations/peerOrganizations/mro.example.com/ca/ca.mro.example.com-cert.pem
+
+echo "$(json_ccp $ORG $P0PORT $CAPORT $PEERPEM $CAPEM)" > organizations/peerOrganizations/mro.example.com/connection-mro.json
+echo "$(yaml_ccp $ORG $P0PORT $CAPORT $PEERPEM $CAPEM)" > organizations/peerOrganizations/mro.example.com/connection-mro.yaml

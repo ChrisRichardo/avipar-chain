@@ -293,6 +293,8 @@ infoln "Install chaincode on peer0.vendor..."
 installChaincode Vendor
 infoln "Install chaincode on peer0.airline..."
 installChaincode Airline
+infoln "Install chaincode on peer0.mro..."
+installChaincode MRO
 
 ## query whether the chaincode is installed
 queryInstalled Airline
@@ -302,44 +304,57 @@ approveForMyOrg Manufacturer
 
 ## check whether the chaincode definition is ready to be committed
 ## expect org1 to have approved and org2 not to
-checkCommitReadiness Manufacturer "\"ManufacturerMSP\": true" "\"VendorMSP\": false" "\"AirlineMSP\": false"
-checkCommitReadiness Vendor "\"ManufacturerMSP\": true" "\"VendorMSP\": false" "\"AirlineMSP\": false"
-checkCommitReadiness Airline "\"ManufacturerMSP\": true" "\"VendorMSP\": false" "\"AirlineMSP\": false"
+checkCommitReadiness Manufacturer "\"ManufacturerMSP\": true" "\"VendorMSP\": false" "\"AirlineMSP\": false" "\"MROMSP\": false"
+checkCommitReadiness Vendor "\"ManufacturerMSP\": true" "\"VendorMSP\": false" "\"AirlineMSP\": false" "\"MROMSP\": false"
+checkCommitReadiness Airline "\"ManufacturerMSP\": true" "\"VendorMSP\": false" "\"AirlineMSP\": false" "\"MROMSP\": false"
+checkCommitReadiness MRO "\"ManufacturerMSP\": true" "\"VendorMSP\": false" "\"AirlineMSP\": false" "\"MROMSP\": false"
 
 ## now approve also for Vendor
 approveForMyOrg Vendor
 
 ## check whether the chaincode definition is ready to be committed
 ## expect them both to have approved
-checkCommitReadiness Manufacturer "\"ManufacturerMSP\": true" "\"VendorMSP\": true" "\"AirlineMSP\": false"
-checkCommitReadiness Vendor "\"ManufacturerMSP\": true" "\"VendorMSP\": true" "\"AirlineMSP\": false"
-checkCommitReadiness Airline "\"ManufacturerMSP\": true" "\"VendorMSP\": true" "\"AirlineMSP\": false"
-
+checkCommitReadiness Manufacturer "\"ManufacturerMSP\": true" "\"VendorMSP\": true" "\"AirlineMSP\": false" "\"MROMSP\": false"
+checkCommitReadiness Vendor "\"ManufacturerMSP\": true" "\"VendorMSP\": true" "\"AirlineMSP\": false" "\"MROMSP\": false"
+checkCommitReadiness Airline "\"ManufacturerMSP\": true" "\"VendorMSP\": true" "\"AirlineMSP\": false" "\"MROMSP\": false"
+checkCommitReadiness MRO "\"ManufacturerMSP\": true" "\"VendorMSP\": true" "\"AirlineMSP\": false" "\"MROMSP\": false"
 
 ## now approve also for Airline
 approveForMyOrg Airline
 
 ## check whether the chaincode definition is ready to be committed
 ## expect them both to have approved
-checkCommitReadiness Manufacturer "\"ManufacturerMSP\": true" "\"VendorMSP\": true" "\"AirlineMSP\": true"
-checkCommitReadiness Vendor "\"ManufacturerMSP\": true" "\"VendorMSP\": true" "\"AirlineMSP\": true"
-checkCommitReadiness Airline "\"ManufacturerMSP\": true" "\"VendorMSP\": true" "\"AirlineMSP\": true"
+checkCommitReadiness Manufacturer "\"ManufacturerMSP\": true" "\"VendorMSP\": true" "\"AirlineMSP\": true" "\"MROMSP\": false"
+checkCommitReadiness Vendor "\"ManufacturerMSP\": true" "\"VendorMSP\": true" "\"AirlineMSP\": true" "\"MROMSP\": false"
+checkCommitReadiness Airline "\"ManufacturerMSP\": true" "\"VendorMSP\": true" "\"AirlineMSP\": true" "\"MROMSP\": false"
+checkCommitReadiness MRO "\"ManufacturerMSP\": true" "\"VendorMSP\": true" "\"AirlineMSP\": true" "\"MROMSP\": false"
+
+## now approve also for Airline
+approveForMyOrg MRO
+
+## check whether the chaincode definition is ready to be committed
+## expect them both to have approved
+checkCommitReadiness Manufacturer "\"ManufacturerMSP\": true" "\"VendorMSP\": true" "\"AirlineMSP\": true" "\"MROMSP\": true"
+checkCommitReadiness Vendor "\"ManufacturerMSP\": true" "\"VendorMSP\": true" "\"AirlineMSP\": true" "\"MROMSP\": true"
+checkCommitReadiness Airline "\"ManufacturerMSP\": true" "\"VendorMSP\": true" "\"AirlineMSP\": true" "\"MROMSP\": true"
+checkCommitReadiness MRO "\"ManufacturerMSP\": true" "\"VendorMSP\": true" "\"AirlineMSP\": true" "\"MROMSP\": true"
 
 ## now that we know for sure both orgs have approved, commit the definition
-commitChaincodeDefinition Manufacturer Vendor Airline
+commitChaincodeDefinition Manufacturer Vendor Airline MRO
 infoln "Commit suceed"
 
 ## query on both orgs to see that the definition committed successfully
 queryCommitted Manufacturer
 queryCommitted Vendor
 queryCommitted Airline
+queryCommitted MRO
 
 ## Invoke the chaincode - this does require that the chaincode have the 'initLedger'
 ## method defined
 if [ "$CC_INIT_FCN" = "NA" ]; then
   infoln "Chaincode initialization is not required"
 else
-  chaincodeInvokeInit Manufacturer Vendor Airline
+  chaincodeInvokeInit Manufacturer Vendor Airline MRO
 fi
 
 exit 0

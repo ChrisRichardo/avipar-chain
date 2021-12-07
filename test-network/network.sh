@@ -165,6 +165,16 @@ function createOrgs() {
       fatalln "Failed to generate certificates..."
     fi
 
+    infoln "Creating MRO Identities"
+
+    set -x
+    cryptogen generate --config=./organizations/cryptogen/crypto-config-mro.yaml --output="organizations"
+    res=$?
+    { set +x; } 2>/dev/null
+    if [ $res -ne 0 ]; then
+      fatalln "Failed to generate certificates..."
+    fi
+
     infoln "Creating Orderer Org Identities"
 
     set -x
@@ -205,13 +215,17 @@ function createOrgs() {
 
     createAirline
 
+    infoln "Creating MRO Identities"
+
+    createMRO
+
     infoln "Creating Orderer Org Identities"
 
     createOrderer
 
   fi
 
-  infoln "Generating CCP files for Manufacturer, Vendor, and Airline"
+  infoln "Generating CCP files for Manufacturer, Vendor, Airline, and MRO"
   ./organizations/ccp-generate.sh
 }
 
@@ -307,6 +321,7 @@ function networkDown() {
     docker run --rm -v "$(pwd):/data" busybox sh -c 'cd /data && rm -rf organizations/fabric-ca/manufacturer/msp organizations/fabric-ca/manufacturer/tls-cert.pem organizations/fabric-ca/manufacturer/ca-cert.pem organizations/fabric-ca/manufacturer/IssuerPublicKey organizations/fabric-ca/manufacturer/IssuerRevocationPublicKey organizations/fabric-ca/manufacturer/fabric-ca-server.db'
     docker run --rm -v "$(pwd):/data" busybox sh -c 'cd /data && rm -rf organizations/fabric-ca/vendor/msp organizations/fabric-ca/vendor/tls-cert.pem organizations/fabric-ca/vendor/ca-cert.pem organizations/fabric-ca/vendor/IssuerPublicKey organizations/fabric-ca/vendor/IssuerRevocationPublicKey organizations/fabric-ca/vendor/fabric-ca-server.db'
     docker run --rm -v "$(pwd):/data" busybox sh -c 'cd /data && rm -rf organizations/fabric-ca/airline/msp organizations/fabric-ca/airline/tls-cert.pem organizations/fabric-ca/airline/ca-cert.pem organizations/fabric-ca/airline/IssuerPublicKey organizations/fabric-ca/airline/IssuerRevocationPublicKey organizations/fabric-ca/airline/fabric-ca-server.db'
+    docker run --rm -v "$(pwd):/data" busybox sh -c 'cd /data && rm -rf organizations/fabric-ca/mro/msp organizations/fabric-ca/mro/tls-cert.pem organizations/fabric-ca/mro/ca-cert.pem organizations/fabric-ca/mro/IssuerPublicKey organizations/fabric-ca/mro/IssuerRevocationPublicKey organizations/fabric-ca/mro/fabric-ca-server.db'
     docker run --rm -v "$(pwd):/data" busybox sh -c 'cd /data && rm -rf organizations/fabric-ca/ordererOrg/msp organizations/fabric-ca/ordererOrg/tls-cert.pem organizations/fabric-ca/ordererOrg/ca-cert.pem organizations/fabric-ca/ordererOrg/IssuerPublicKey organizations/fabric-ca/ordererOrg/IssuerRevocationPublicKey organizations/fabric-ca/ordererOrg/fabric-ca-server.db'
     docker run --rm -v "$(pwd):/data" busybox sh -c 'cd /data && rm -rf addOrg3/fabric-ca/org3/msp addOrg3/fabric-ca/org3/tls-cert.pem addOrg3/fabric-ca/org3/ca-cert.pem addOrg3/fabric-ca/org3/IssuerPublicKey addOrg3/fabric-ca/org3/IssuerRevocationPublicKey addOrg3/fabric-ca/org3/fabric-ca-server.db'
     # remove channel and script artifacts

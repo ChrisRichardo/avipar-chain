@@ -23,7 +23,7 @@ createChannelGenesisBlock() {
 		fatalln "configtxgen tool not found."
 	fi
 	set -x
-	configtxgen -profile ThreeOrgsApplicationGenesis -outputBlock ./channel-artifacts/${CHANNEL_NAME}.block -channelID $CHANNEL_NAME
+	configtxgen -profile FourOrgsApplicationGenesis -outputBlock ./channel-artifacts/${CHANNEL_NAME}.block -channelID $CHANNEL_NAME
 	res=$?
 	{ set +x; } 2>/dev/null
   verifyResult $res "Failed to generate channel configuration transaction..."
@@ -95,6 +95,8 @@ infoln "Joining Vendor peer to the channel..."
 joinChannel Vendor
 infoln "Joining Airline peer to the channel..."
 joinChannel Airline
+infoln "Joining MRO peer to the channel..."
+joinChannel MRO
 
 ## Set the anchor peers for each org in the channel
 infoln "Setting anchor peer for Manufacturer..."
@@ -103,5 +105,7 @@ infoln "Setting anchor peer for Vendor..."
 setAnchorPeer Vendor
 infoln "Setting anchor peer for Supplier..."
 setAnchorPeer Airline
+infoln "Setting anchor peer for MRO..."
+setAnchorPeer MRO
 
 successln "Channel '$CHANNEL_NAME' joined"

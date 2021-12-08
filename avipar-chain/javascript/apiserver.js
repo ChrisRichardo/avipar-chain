@@ -16,7 +16,7 @@ app.set('secret', 'aviparsecret');
 app.use(expressJWT({
     secret: 'aviparsecret', algorithms: ['HS256']
 }).unless({
-    path: ['/api/createuser','/api/signin', '/api/queryallusers']
+    path: ['/api/createuser','/api/signin', '/api/queryallusers', '/api/initdata']
 }));
 app.use(bearerToken());
 
@@ -188,6 +188,27 @@ app.get('/api/queryassetowned', async function (req, res) {
         }
 });
     
+app.get('/api/asset/detail/:asset_index', async function (req, res) {
+    try {
+        var networkObj = await getNetwork(req.orgname, req.username);
+
+        var resultBuf = await networkObj.contract.submitTransaction('queryAsset', req.params.asset_index);
+        var result= JSON.parse(resultBuf.toString())
+        if(result.Status == false){
+            res.status(400).json({response: result.Message});
+            console.log(result.Message);
+        } else{        
+            console.log(result.Record);
+            res.status(200).json({response: result.Record});
+            console.log(result.Message);
+        }
+        await networkObj.gateway.disconnect();
+} catch (error) {
+        console.error(`Failed to submit transaction: ${error}`);
+        process.exit(1);
+    } 
+})
+
 app.get('/api/asset/history/:asset_index', async function (req, res) {
     try {
         var networkObj = await getNetwork(req.orgname, req.username);
@@ -228,9 +249,29 @@ app.put('/api/asset/transfer/:asset_index', async function (req, res) {
     } 
 })
 
+app.put('/api/asset/update/:asset_index', async function (req, res) {
+    try {
+        var networkObj = await getNetwork(req.orgname, req.username);
+        console.log(req.body);
+        var resultBuf = await networkObj.contract.submitTransaction('updateAsset', req.params.asset_index, req.body.name, req.body.number, req.body.status, req.username);
+        var result= JSON.parse(resultBuf.toString())
+        if(result.Status == false){
+            res.status(400).json({response: result.Message});
+        } else{        
+            res.status(200).json({response: result.Message});
+        }
+        console.log(result.Message);
+        await networkObj.gateway.disconnect();
+} catch (error) {
+        console.error(`Failed to submit transaction: ${error}`);
+        process.exit(1);
+    } 
+})
+
+
 app.post('/api/signin/', async function (req, res) {
         try {
-        req.body.org = "manufacturer";
+            req.body.org = "vendor";
             var networkObj = await getNetwork(req.body.org, req.username);
                 
             var resultBuf = await networkObj.contract.submitTransaction('signIn', req.body.email, req.body.password);
@@ -326,6 +367,7 @@ app.get('/api/initdata', async function (req, res)  {
             ["SPR002", "Ekor", "nadim@gmail.com"],
         ]
         for (var asset of assets){
+            console.log(asset);
             await networkObj.contract.submitTransaction('createAsset', asset[0], asset[1], asset[2]);
         }
         console.log("Init data success");

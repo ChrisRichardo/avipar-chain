@@ -44,6 +44,8 @@ type User struct {
 type QueryResultAsset struct {
 	Key    string `json:"Key"`
 	Record *Asset
+	Message string `json:"Message"`
+	Status bool `json:"Status"`
 }
 
 type QueryResultAssets struct {
@@ -105,6 +107,16 @@ func incrementCounter(ctx contractapi.TransactionContextInterface, AssetType str
 	fmt.Println("Success in incrementing counter  %v", counterAsset)
 
 	return counterAsset.Counter
+}
+
+func checkStatus(status string) bool {
+	statuses := []string{"Available", "Not Available", "In Use", "Repairing", "Completed"}
+	for _, b := range statuses {
+        if b == status {
+            return true
+        }
+    }
+	return false
 }
 
 func (s *SmartContract) InitCounters(ctx contractapi.TransactionContextInterface) error {
@@ -201,20 +213,24 @@ func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface,
 	}
 }
 
-func (s *SmartContract) QueryAsset(ctx contractapi.TransactionContextInterface, assetId string) (*Asset, error) {
-	assetAsBytes, err := ctx.GetStub().GetState(assetId)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to read from world state. %s", err.Error())
-	}
+func (s *SmartContract) QueryAsset(ctx contractapi.TransactionContextInterface, assetId string) (*QueryResultAsset, error) {
+	result := QueryResultAsset{}
+	result.Key = assetId
+	result.Status = false
 
-	if assetAsBytes == nil {
-		return nil, fmt.Errorf("%s does not exist", assetId)
+	assetAsBytes, err := ctx.GetStub().GetState(assetId)
+	if err != nil || assetAsBytes == nil {
+		result.Message = "Asset " + assetId + " not existed"
+		return &result, nil
 	}
 
 	asset := new(Asset)
 	_ = json.Unmarshal(assetAsBytes, asset)
 
-	return asset, nil
+	result.Record = asset
+	result.Status = true
+	result.Message = "Asset " + assetId + " retrieved"
+	return &result, nil
 }
 
 func (s *SmartContract) QueryAllAssets(ctx contractapi.TransactionContextInterface) ([]QueryResultAsset, error) {
@@ -398,7 +414,8 @@ func (s *SmartContract) TransferAssetOwner(ctx contractapi.TransactionContextInt
 	result := QueryResultStatusMessage{}
 	result.Status = false;
 
-	asset, _ := s.QueryAsset(ctx, assetId)
+	queryAsset, _ := s.QueryAsset(ctx, assetId)
+	asset := queryAsset.Record
 
 	entitiesUserEmail, _ := s.QueryUserByEmail(ctx, asset.PIC)
 	userOrg := entitiesUserEmail[0].Record.Org
@@ -452,6 +469,49 @@ func (s *SmartContract) TransferAssetOwner(ctx contractapi.TransactionContextInt
 	result.Status = true
 	return &result, nil
 }
+
+func (s *SmartContract) UpdateAsset(ctx contractapi.TransactionContextInterface, assetId string, name string, number string, status string, updateBy string) (*QueryResultStatusMessage, error) {
+	result := QueryResultStatusMessage{}
+	result.Status = false;
+
+	statusCheck := checkStatus(status)
+	if !statusCheck {
+		result.Message = "Status " + status + " not valid"
+		return &result, nil
+	}
+
+	queryAsset, _ := s.QueryAsset(ctx, assetId)
+	asset := queryAsset.Record
+
+	entitiesUserEmail, _ := s.QueryUserByEmail(ctx, asset.PIC)
+	userOrg := entitiesUserEmail[0].Record.Org
+
+	entitiesUpdateUserEmail, _ := s.QueryUserByEmail(ctx, updateBy)
+	updateUserOrg := entitiesUpdateUserEmail[0].Record.Org
+	
+	if userOrg != updateUserOrg{
+		result.Message = "You are not from " + userOrg + " organization"
+		return &result, nil
+	}
+
+	if name != "" {
+		asset.SparepartName = name
+	}
+	if number != "" {
+		asset.SparepartNumber = number
+	}
+	if status != "" {
+		asset.Status = status
+	}
+
+	assetAsBytes, _ := json.Marshal(asset)
+	ctx.GetStub().PutState(assetId, assetAsBytes)
+
+	result.Message = "Spare part " + assetId +  " updated" 
+	result.Status = true
+	return &result, nil
+}
+
 
 func (s *SmartContract) CreateUser(ctx contractapi.TransactionContextInterface, name string, email string, org string, role string, address string, password string) (bool, error) {
 	userCounter := getCounter(ctx, "UserCounterNo")

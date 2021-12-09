@@ -8,9 +8,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
+
+const TimeFormat string = "01-02-2006 15:04:05"
 
 // SmartContract provides functions for managing a car
 type SmartContract struct {
@@ -24,10 +27,14 @@ type CounterNo struct {
 // Car describes basic details of what makes up a car
 type Asset struct {
 	ID             	 string `json:"ID"`
-	SparepartNumber  string `json:"SparepartNumber"`
-	SparepartName 	 string `json:"SparepartName"`
-	PIC          	 string `json:"PIC"`
+	Number  		 string `json:"Number"`
+	Name 	 		 string `json:"Name"`
+	Owner          	 string `json:"Owner"`
 	Status			 string `json:"Status"`
+	UpdateDate       string `json:"UpdateDate"`
+	Quantity         int    `json:"Quantity"`
+	Weight           int    `json:"Weight"`
+	Org       	     string `json:"Org"`
 }
 
 type User struct {
@@ -63,7 +70,17 @@ type QueryResult2 struct {
 type QueryResultUser struct {
 	Key    string `json:"Key"`
 	Record *User
+	Message string `json:"Message"`
+	Status bool `json:"Status"`
 }
+
+type QueryResultUsers struct {
+	Key    string `json:"Key"`
+	Record []User
+	Message string `json:"Message"`
+	Status bool `json:"Status"`
+}
+
 
 type QueryResultSignIn struct {
 	Key    string `json:"Key"`
@@ -136,26 +153,6 @@ func (s *SmartContract) InitCounters(ctx contractapi.TransactionContextInterface
 	return nil
 }
 
-func (s *SmartContract) InitCars(ctx contractapi.TransactionContextInterface) error {
-
-	cars := []Asset{
-		{ID: "po1", SparepartNumber: "888-1234-123", SparepartName: "Brake", PIC: "Nadeem Abdur Rasheed"},
-		{ID: "po2", SparepartNumber: "888-1234-123", SparepartName: "Brake", PIC: "Christopher Richardo"},
-		{ID: "po3", SparepartNumber: "777-1234-111", SparepartName: "Front Wheel", PIC: "TB. Naufal Arya Maulana"},
-	}
-
-	for i, car := range cars {
-		fmt.Println("i is ", i)
-		carAsBytes, _ := json.Marshal(car)
-		ctx.GetStub().PutState("ASSET" + strconv.Itoa(i+1), carAsBytes)
-		fmt.Println("Added", car)
-		i = i + 1
-	}
-
-	return nil
-}
-
-
 // InitLedger adds a base set of cars to the ledger
 func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) error {
 	// Initializing Car Counter
@@ -165,13 +162,13 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 }
 
 // CreateAsset adds a new car to the world state with given details
-func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface, number string, name string, owner string) (bool, error) {
+func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface, number string, name string, owner string, quantity int, weight int) (bool, error) {
 	entitiesUserEmail, _ := s.QueryUserByEmail(ctx, owner)
-	if len(entitiesUserEmail) ==  0{
+	if !entitiesUserEmail.Status{
 		return false, nil
 	}
 	
-	userOrg := entitiesUserEmail[0].Record.Org
+	userOrg := entitiesUserEmail.Record.Org
 	if userOrg != "manufacturer"{
 		return false, nil
 	}
@@ -183,10 +180,14 @@ func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface,
 
 	asset := Asset{
 		ID: "Asset" +  strconv.Itoa(assetCounter),
-		SparepartNumber:   number,
-		SparepartName:  name,
-		PIC: owner,
+		Number:   number,
+		Name:  name,
+		Owner: owner,
 		Status: "Available",
+		Quantity: quantity,
+		Weight: weight,
+		UpdateDate: time.Now().Format(TimeFormat),
+		Org: userOrg,
 	}
 	assetAsBytes, _ := json.Marshal(asset)
 	assetCheck := []string {};
@@ -197,12 +198,12 @@ func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface,
 	} else {
 		errPut := ctx.GetStub().PutState("ASSET" + strconv.Itoa(assetCounter), assetAsBytes)
 		if errPut != nil {
-			return false, fmt.Errorf(fmt.Sprintf("Failed to create asset: %s", asset.SparepartNumber))
+			return false, fmt.Errorf(fmt.Sprintf("Failed to create asset: %s", asset.Number))
 		}
 
-		indexKey, err := ctx.GetStub().CreateCompositeKey(indexName, []string{asset.PIC, "ASSET" + strconv.Itoa(assetCounter)})
+		indexKey, err := ctx.GetStub().CreateCompositeKey(indexName, []string{asset.Owner, "ASSET" + strconv.Itoa(assetCounter)})
 		if err != nil {
-			return false, fmt.Errorf(fmt.Sprintf("Failed to create asset composite key: %s", asset.SparepartNumber))
+			return false, fmt.Errorf(fmt.Sprintf("Failed to create asset composite key: %s", asset.Number))
 		}
 		value := []byte{0x00}
 		ctx.GetStub().PutState(indexKey, value)
@@ -357,23 +358,27 @@ func (s *SmartContract) QueryAllUsers(ctx contractapi.TransactionContextInterfac
 	return results, nil
 }
 
-func (s *SmartContract) QueryUserByEmail(ctx contractapi.TransactionContextInterface, email string) ([]QueryResultUser, error) {
+func (s *SmartContract) QueryUserByEmail(ctx contractapi.TransactionContextInterface, email string) (QueryResultUser, error) {
+	result := QueryResultUser{}
+	result.Key = email
+	result.Status = false
+
 	indexName := "email~userid"
 
-	resultsIterator, err := ctx.GetStub().GetStateByPartialCompositeKey(indexName, []string{email})
-	if err != nil {
-		return nil, err
+	resultsIterator, _ := ctx.GetStub().GetStateByPartialCompositeKey(indexName, []string{email})
+	if !resultsIterator.HasNext() {
+		result.Message = "Email not exist"
+		return result, nil
 	}
 	defer resultsIterator.Close()
-
-	results := []QueryResultUser{}
 
 	for resultsIterator.HasNext() {
 		queryResponse, _ := resultsIterator.Next()
 
 		_, compositeKeyParts, err := ctx.GetStub().SplitCompositeKey(queryResponse.Key)
 		if err != nil {
-			return nil, fmt.Errorf("Split composite key error")
+			result.Message = "Split composite key error"
+			return result, nil
 		}
 
 		returnedUserId := compositeKeyParts[1]
@@ -383,10 +388,12 @@ func (s *SmartContract) QueryUserByEmail(ctx contractapi.TransactionContextInter
 		user := new(User)
 		_ = json.Unmarshal(userAsBytes, user)
 
-		queryResult := QueryResultUser{Key: returnedUserId, Record: user}
-		results = append(results, queryResult)
+		result.Record = user
 	}
-	return results, nil
+
+	result.Message = "Email exist"
+	result.Status = true
+	return result, nil
 }
 
 func (s *SmartContract) SignIn(ctx contractapi.TransactionContextInterface, email string, password string) (*QueryResultSignIn, error) {
@@ -394,12 +401,12 @@ func (s *SmartContract) SignIn(ctx contractapi.TransactionContextInterface, emai
 	result.Status = false
 
 	entitiesUserEmail, _ := s.QueryUserByEmail(ctx, email)
-	if len(entitiesUserEmail) ==  0{
+	if !entitiesUserEmail.Status{
 		return &result, nil
 	}
 
-	result.Record = entitiesUserEmail[0].Record
-	result.Key = entitiesUserEmail[0].Key
+	result.Record = entitiesUserEmail.Record
+	result.Key = entitiesUserEmail.Key
 
 	// check if password matched
 	if result.Record.Password != password {
@@ -417,16 +424,16 @@ func (s *SmartContract) TransferAssetOwner(ctx contractapi.TransactionContextInt
 	queryAsset, _ := s.QueryAsset(ctx, assetId)
 	asset := queryAsset.Record
 
-	entitiesUserEmail, _ := s.QueryUserByEmail(ctx, asset.PIC)
-	userOrg := entitiesUserEmail[0].Record.Org
+	entitiesUserEmail, _ := s.QueryUserByEmail(ctx, asset.Owner)
+	userOrg := entitiesUserEmail.Record.Org
 
 	entitiesNewUserEmail, _ := s.QueryUserByEmail(ctx, newOwner)
-	if len(entitiesNewUserEmail) ==  0{
+	if entitiesNewUserEmail.Status ==  false{
 		result.Message = "New Owner not existed"
 		return &result, nil
 	}
 
-	newUserOrg := entitiesNewUserEmail[0].Record.Org
+	newUserOrg := entitiesNewUserEmail.Record.Org
 	
 	if userOrg == "manufacturer" && newUserOrg != "vendor"{
 		result.Message = "Only Vendor able to buy from Manufacturer"
@@ -446,18 +453,20 @@ func (s *SmartContract) TransferAssetOwner(ctx contractapi.TransactionContextInt
 
 	indexName := "owner~assetid"
 
-	ownerAssetidIndexKey, _ := ctx.GetStub().CreateCompositeKey(indexName, []string{asset.PIC, assetId})
+	ownerAssetidIndexKey, _ := ctx.GetStub().CreateCompositeKey(indexName, []string{asset.Owner, assetId})
 	err := ctx.GetStub().DelState(ownerAssetidIndexKey)
 	if err != nil {
 		result.Message = "Failed to delete composite key " + ownerAssetidIndexKey
 		return &result, nil
 	}
 
-	asset.PIC = newOwner
+	asset.Owner = newOwner
+	asset.Org = userOrg
+	asset.UpdateDate = time.Now().Format(TimeFormat)
 	assetAsBytes, _ := json.Marshal(asset)
 	ctx.GetStub().PutState(assetId, assetAsBytes)
 
-	newOwnerAssetidIndexKey, err := ctx.GetStub().CreateCompositeKey(indexName, []string{asset.PIC, assetId})
+	newOwnerAssetidIndexKey, err := ctx.GetStub().CreateCompositeKey(indexName, []string{asset.Owner, assetId})
 	if err != nil {
 		result.Message = "Failed to create new composite key " + newOwnerAssetidIndexKey
 		return &result, nil
@@ -470,7 +479,7 @@ func (s *SmartContract) TransferAssetOwner(ctx contractapi.TransactionContextInt
 	return &result, nil
 }
 
-func (s *SmartContract) UpdateAsset(ctx contractapi.TransactionContextInterface, assetId string, name string, number string, status string, updateBy string) (*QueryResultStatusMessage, error) {
+func (s *SmartContract) UpdateAsset(ctx contractapi.TransactionContextInterface, assetId string, name string, number string, status string, quantity int, weight int, updateBy string) (*QueryResultStatusMessage, error) {
 	result := QueryResultStatusMessage{}
 	result.Status = false;
 
@@ -483,11 +492,11 @@ func (s *SmartContract) UpdateAsset(ctx contractapi.TransactionContextInterface,
 	queryAsset, _ := s.QueryAsset(ctx, assetId)
 	asset := queryAsset.Record
 
-	entitiesUserEmail, _ := s.QueryUserByEmail(ctx, asset.PIC)
-	userOrg := entitiesUserEmail[0].Record.Org
+	entitiesUserEmail, _ := s.QueryUserByEmail(ctx, asset.Owner)
+	userOrg := entitiesUserEmail.Record.Org
 
 	entitiesUpdateUserEmail, _ := s.QueryUserByEmail(ctx, updateBy)
-	updateUserOrg := entitiesUpdateUserEmail[0].Record.Org
+	updateUserOrg := entitiesUpdateUserEmail.Record.Org
 	
 	if userOrg != updateUserOrg{
 		result.Message = "You are not from " + userOrg + " organization"
@@ -495,15 +504,22 @@ func (s *SmartContract) UpdateAsset(ctx contractapi.TransactionContextInterface,
 	}
 
 	if name != "" {
-		asset.SparepartName = name
+		asset.Name = name
 	}
 	if number != "" {
-		asset.SparepartNumber = number
+		asset.Number = number
 	}
 	if status != "" {
 		asset.Status = status
 	}
+	if quantity != -1 {
+		asset.Quantity = quantity
+	}
+	if weight != -1 {
+		asset.Weight = weight
+	}
 
+	asset.UpdateDate = time.Now().Format(TimeFormat)
 	assetAsBytes, _ := json.Marshal(asset)
 	ctx.GetStub().PutState(assetId, assetAsBytes)
 
@@ -511,7 +527,6 @@ func (s *SmartContract) UpdateAsset(ctx contractapi.TransactionContextInterface,
 	result.Status = true
 	return &result, nil
 }
-
 
 func (s *SmartContract) CreateUser(ctx contractapi.TransactionContextInterface, name string, email string, org string, role string, address string, password string) (bool, error) {
 	userCounter := getCounter(ctx, "UserCounterNo")
@@ -523,8 +538,8 @@ func (s *SmartContract) CreateUser(ctx contractapi.TransactionContextInterface, 
 	comAssetAsBytes, _ := json.Marshal(comAsset)
 
 	emailCheck, _ := s.QueryUserByEmail(ctx, email)
-	if len(emailCheck) > 0 {
-		fmt.Printf("Failed to Increment Counter")
+	if emailCheck.Status == true {
+		fmt.Printf("Email Existed")
 
 		return false, nil;
 	} else {
@@ -546,7 +561,6 @@ func (s *SmartContract) CreateUser(ctx contractapi.TransactionContextInterface, 
 		return true, errPut;
 	}
 }
-
 
 func main() {
 

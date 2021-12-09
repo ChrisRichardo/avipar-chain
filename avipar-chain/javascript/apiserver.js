@@ -152,7 +152,7 @@ app.post('/api/asset/add', async function (req, res) {
     try {
         var networkObj = await getNetwork(req.orgname, req.username);
 
-        var resultBuf = await networkObj.contract.submitTransaction('createAsset', req.body.number, req.body.name, req.username);
+        var resultBuf = await networkObj.contract.submitTransaction('createAsset', req.body.number, req.body.name, req.username, req.body.quantity, req.body.weight);
         var result= JSON.parse(resultBuf.toString())
         if(result.toString() == "false"){
                 message = "Asset existed";
@@ -253,7 +253,7 @@ app.put('/api/asset/update/:asset_index', async function (req, res) {
     try {
         var networkObj = await getNetwork(req.orgname, req.username);
         console.log(req.body);
-        var resultBuf = await networkObj.contract.submitTransaction('updateAsset', req.params.asset_index, req.body.name, req.body.number, req.body.status, req.username);
+        var resultBuf = await networkObj.contract.submitTransaction('updateAsset', req.params.asset_index, req.body.name, req.body.number, req.body.status, req.username, req.body.quantity);
         var result= JSON.parse(resultBuf.toString())
         if(result.Status == false){
             res.status(400).json({response: result.Message});
@@ -271,28 +271,39 @@ app.put('/api/asset/update/:asset_index', async function (req, res) {
 
 app.post('/api/signin/', async function (req, res) {
         try {
-            req.body.org = "vendor";
-            var networkObj = await getNetwork(req.body.org, req.username);
-                
-            var resultBuf = await networkObj.contract.submitTransaction('signIn', req.body.email, req.body.password);
-            var result= JSON.parse(resultBuf.toString())
-            var message;
+            var networkObjQuery = await getNetwork("manufacturer", "admin");
+            var resultBuf = await networkObjQuery.contract.evaluateTransaction('queryUserByEmail', req.body.email);
+            var result= JSON.parse(resultBuf.toString());
+            await networkObjQuery.gateway.disconnect();
+            console.log(result);
             if(result.Status == false){
                 message = "User not existed"
                 res.status(400).json({response: message});
-            } else{
-                var token = jwt.sign({
-                        exp: Math.floor(Date.now() / 1000) + 30000,
-                        username: req.body.email,
-                        orgName: req.body.org
-                    }, app.get('secret'));                
-                message = req.body.email + ' signed in using ' + token;
-                res.status(200).json({response: token});
+            } else {
+                console.log(result.Record);
+                var networkObj = await getNetwork(result.Record.Org, req.username);
+                    
+                var resultBuf2 = await networkObj.contract.submitTransaction('signIn', req.body.email, req.body.password);
+                var result2= JSON.parse(resultBuf2.toString())
+                console.log(result2);
+                var message;
+                if(result2.Status == false){
+                    message = "Wrong user credential"
+                    res.status(400).json({response: message});
+                } else{
+                    var token = jwt.sign({
+                            exp: Math.floor(Date.now() / 1000) + 30000,
+                            username: req.body.email,
+                            orgName: result.Record.Org
+                        }, app.get('secret'));                
+                    message = req.body.email + ' signed in using ' + token;
+                    res.status(200).json({response: token});
+                }
+                console.log(message);
+                
+        // Disconnect from the gateway.
+                await networkObj.gateway.disconnect();
             }
-            console.log(message);
-            
-    // Disconnect from the gateway.
-            await networkObj.gateway.disconnect();
     } catch (error) {
             console.error(`Failed to submit transaction: ${error}`);
             process.exit(1);
@@ -363,12 +374,12 @@ app.get('/api/initdata', async function (req, res)  {
         }
         
         var assets = [
-            ["SPR001", "Buntut", "payo@gmail.com"],
-            ["SPR002", "Ekor", "nadim@gmail.com"],
+            ["SPR001", "Buntut", "payo@gmail.com", 10, 2],
+            ["SPR002", "Ekor", "nadim@gmail.com", 50, 5],
         ]
         for (var asset of assets){
             console.log(asset);
-            await networkObj.contract.submitTransaction('createAsset', asset[0], asset[1], asset[2]);
+            await networkObj.contract.submitTransaction('createAsset', asset[0], asset[1], asset[2], asset[3], asset[4]);
         }
         console.log("Init data success");
         res.status(200).json({response: "Init data success"});

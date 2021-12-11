@@ -22,7 +22,6 @@ type CounterNo struct {
 	Counter int `json:"counter"`
 }
 
-// Car describes basic details of what makes up a car
 type Asset struct {
 	ID             	 string `json:"ID"`
 	Number  		 string `json:"Number"`
@@ -34,6 +33,22 @@ type Asset struct {
 	Weight           int    `json:"Weight"`
 	Org       	     string `json:"Org"`
 	PreviousAsset    string `json:"PreviousAsset"`
+}
+
+type AssetAvailableQty struct {
+	AssetID       	 string `json:"AssetID"`
+	Quantity         int    `json:"Quantity"`
+}
+
+type PurchaseOrder struct{
+	ID             	 string `json:"ID"`
+	AssetID          string `json:"AssetID"`
+	BuyerEmail	     string `json:"BuyerEmail"`
+	Quantity         int    `json:"Quantity"`
+	Status			 string `json:"Status"`
+	BuyerOrg         string `json:"BuyerOrg"`
+	SellerOrg         string `json:"SellerOrg"`
+	Timestamp        string `json:"Timestamp"`
 }
 
 type User struct {
@@ -50,6 +65,7 @@ type User struct {
 type QueryResultAsset struct {
 	Key    string `json:"Key"`
 	Record *Asset
+	RecordQty *AssetAvailableQty
 	Message string `json:"Message"`
 	Status bool `json:"Status"`
 }
@@ -57,6 +73,21 @@ type QueryResultAsset struct {
 type QueryResultAssets struct {
 	Key    string `json:"Key"`
 	Record []Asset
+	RecordQty []AssetAvailableQty
+	Message string `json:"Message"`
+	Status bool `json:"Status"`
+}
+
+type QueryResultAssetQty struct {
+	Key    string `json:"Key"`
+	Record *AssetAvailableQty
+	Message string `json:"Message"`
+	Status bool `json:"Status"`
+}
+
+type QueryResultPO struct {
+	Key    string `json:"Key"`
+	Record *PurchaseOrder
 	Message string `json:"Message"`
 	Status bool `json:"Status"`
 }
@@ -79,7 +110,6 @@ type QueryResultUsers struct {
 	Message string `json:"Message"`
 	Status bool `json:"Status"`
 }
-
 
 type QueryResultSignIn struct {
 	Key    string `json:"Key"`
@@ -157,6 +187,11 @@ func (s *SmartContract) InitCounters(ctx contractapi.TransactionContextInterface
 	var UserCounter = CounterNo{Counter: 0}
 	UserCounterBytes, _ := json.Marshal(UserCounter)
 	ctx.GetStub().PutState("UserCounterNo", UserCounterBytes)
+
+
+	var POCounter = CounterNo{Counter: 0}
+	POCounterBytes, _ := json.Marshal(POCounter)
+	ctx.GetStub().PutState("POCounterNo", POCounterBytes)
 		
 
 	return nil
@@ -170,7 +205,107 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 	return nil
 }
 
-// CreateAsset adds a new car to the world state with given details
+func (s *SmartContract) CreatePurchaseOrder(ctx contractapi.TransactionContextInterface, assetId string, email string, quantity int, timestamp string) (bool, error) {
+	status := "Waiting for Buyer Organization"
+
+	entitiesUserEmail, _ := s.QueryUserByEmail(ctx, email)
+	if !entitiesUserEmail.Status{
+		return false, nil
+	}
+
+	user := entitiesUserEmail.Record
+	if user.Role == "supervisor" {
+		status = "Waiting for Seller Organization"
+	}
+
+	queryAsset, _ := s.QueryAsset(ctx, assetId)
+	asset := queryAsset.Record
+
+	entitiesSellerEmail, _ := s.QueryUserByEmail(ctx, asset.Owner)
+	seller := entitiesSellerEmail.Record
+	
+	poCounter := getCounter(ctx, "POCounterNo")
+	poCounter++
+	
+	indexName := "owner~poid"
+
+	po := PurchaseOrder{
+		ID: "PO" +  strconv.Itoa(poCounter),
+		AssetID: assetId,
+		BuyerEmail: email,
+		Status: status,
+		Quantity: quantity,
+		BuyerOrg: user.Org,
+		SellerOrg: seller.Org,
+		Timestamp: timestamp,
+	}
+
+	poAsBytes, _ := json.Marshal(po)
+	errPut := ctx.GetStub().PutState("PO" + strconv.Itoa(poCounter), poAsBytes)
+	if errPut != nil {
+		return false, fmt.Errorf(fmt.Sprintf("Failed to create asset: %s", po.ID))
+	}
+
+	indexKey, err := ctx.GetStub().CreateCompositeKey(indexName, []string{po.BuyerEmail, "PO" + strconv.Itoa(poCounter)})
+	if err != nil {
+		return false, fmt.Errorf(fmt.Sprintf("Failed to create asset composite key: %s", po.ID))
+	}
+	value := []byte{0x00}
+	ctx.GetStub().PutState(indexKey, value)
+
+	s.UpdateAssetAvailableQty(ctx, po.AssetID, po.Quantity)
+
+	incrementCounter(ctx, "POCounterNo")
+	
+	return true, errPut;
+}
+
+func (s *SmartContract) UpdatePurchaseOrderStatus(ctx contractapi.TransactionContextInterface, poId string, updateBy string, timestamp string) (*QueryResultStatusMessage, error) {
+	result := QueryResultStatusMessage{}
+	result.Status = false;
+
+	queryPO, _ := s.QueryPO(ctx, poId)
+	po := queryPO.Record
+
+	entitiesBuyerEmail, _ := s.QueryUserByEmail(ctx, po.BuyerEmail)
+	buyer := entitiesBuyerEmail.Record
+
+	entitiesUpdateUserEmail, _ := s.QueryUserByEmail(ctx, updateBy)
+	updateUser := entitiesUpdateUserEmail.Record
+
+	queryAsset, _ := s.QueryAsset(ctx, po.AssetID)
+	asset := queryAsset.Record
+
+	entitiesUserEmail, _ := s.QueryUserByEmail(ctx, asset.Owner)
+	user := entitiesUserEmail.Record
+
+	if updateUser.Role != "supervisor"{
+		result.Message = user.Email + " is not Supervisor"
+		return &result, nil
+	}
+
+	if po.Status == "Waiting for Buyer Organization" && buyer.Org == updateUser.Org {
+		po.Status = "Waiting for Seller Organization"
+	} else if po.Status == "Waiting for Seller Organization" && user.Org == updateUser.Org {
+		s.UpdateAsset(ctx, asset.ID, asset.Name, asset.Number, asset.Status, po.Quantity, asset.Weight, timestamp, updateBy, buyer.Email)
+		po.Status = "Completed"
+	} else if po.Status == "Completed"{
+		result.Message = "PO is already completed"
+		return &result, nil
+	} else {
+		result.Message = "PO update failed"
+		return &result, nil
+	}
+
+	po.Timestamp = timestamp
+	poAsBytes, _ := json.Marshal(po)
+	ctx.GetStub().PutState(poId, poAsBytes)
+
+	result.Message = "Purchase Order " + poId +  " updated" 
+	result.Status = true
+	return &result, nil
+}
+
 func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface, number string, name string, owner string, quantity int, weight int,timestamp string, previousAsset string) (bool, error) {
 	status := "Available"
 
@@ -190,11 +325,9 @@ func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface,
 
 	assetCounter := getCounter(ctx, "AssetCounterNo")
 	assetCounter++
-	
-	indexName := "owner~assetid"
 
 	asset := Asset{
-		ID: "Asset" +  strconv.Itoa(assetCounter),
+		ID: "ASSET" +  strconv.Itoa(assetCounter),
 		Number:   number,
 		Name:  name,
 		Owner: owner,
@@ -218,6 +351,17 @@ func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface,
 			return false, fmt.Errorf(fmt.Sprintf("Failed to create asset: %s", asset.Number))
 		}
 
+		assetAvailableQty := AssetAvailableQty{
+			AssetID: asset.ID,
+			Quantity: quantity,
+		}
+		assetAvailableQtyAsBytes, _ := json.Marshal(assetAvailableQty)
+		errPut = ctx.GetStub().PutState("ASSETQTY" + asset.ID, assetAvailableQtyAsBytes)
+		if errPut != nil {
+			return false, fmt.Errorf(fmt.Sprintf("Failed to create asset: %s", asset.Number))
+		}
+
+		indexName := "owner~assetid"
 		indexKey, err := ctx.GetStub().CreateCompositeKey(indexName, []string{asset.Owner, "ASSET" + strconv.Itoa(assetCounter)})
 		if err != nil {
 			return false, fmt.Errorf(fmt.Sprintf("Failed to create asset composite key: %s", asset.Number))
@@ -229,6 +373,51 @@ func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface,
 		
 		return true, errPut;
 	}
+}
+
+func (s *SmartContract) QueryPO(ctx contractapi.TransactionContextInterface, poId string) (*QueryResultPO, error) {
+	result := QueryResultPO{}
+	result.Key = poId
+	result.Status = false
+
+	poAsBytes, err := ctx.GetStub().GetState(poId)
+	if err != nil || poAsBytes == nil {
+		result.Message = "PO " + poId + " not existed"
+		return &result, nil
+	}
+
+	po := new(PurchaseOrder)
+	_ = json.Unmarshal(poAsBytes, po)
+
+	result.Record = po
+	result.Status = true
+	result.Message = "PO " + po.ID + " retrieved"
+	return &result, nil
+}
+
+func (s *SmartContract) QueryAllPO(ctx contractapi.TransactionContextInterface) ([]QueryResultPO, error) {
+	assetCounter := getCounter(ctx, "POCounterNo")
+	assetCounter++
+
+	startKey := "PO0"
+	endKey := "PO" + strconv.Itoa(assetCounter)
+
+	resultsIterator, _ := ctx.GetStub().GetStateByRange(startKey, endKey)
+
+	defer resultsIterator.Close()
+
+	results := []QueryResultPO{}
+
+	for resultsIterator.HasNext() {
+		queryResponse, _ := resultsIterator.Next()
+
+		po := new(PurchaseOrder)
+		_ = json.Unmarshal(queryResponse.Value, po)
+
+		queryResult := QueryResultPO{Key: queryResponse.Key, Record: po}
+		results = append(results, queryResult)
+	}
+	return results, nil
 }
 
 func (s *SmartContract) QueryAsset(ctx contractapi.TransactionContextInterface, assetId string) (*QueryResultAsset, error) {
@@ -251,6 +440,26 @@ func (s *SmartContract) QueryAsset(ctx contractapi.TransactionContextInterface, 
 	return &result, nil
 }
 
+func (s *SmartContract) QueryAssetAvailableQty(ctx contractapi.TransactionContextInterface, assetId string) (*QueryResultAssetQty, error) {
+	result := QueryResultAssetQty{}
+	result.Key = assetId
+	result.Status = false
+
+	assetAsBytes, err := ctx.GetStub().GetState("ASSETQTY" + assetId)
+	if err != nil || assetAsBytes == nil {
+		result.Message = "Asset " + assetId + " not existed"
+		return &result, nil
+	}
+
+	asset := new(AssetAvailableQty)
+	_ = json.Unmarshal(assetAsBytes, asset)
+
+	result.Record = asset
+	result.Status = true
+	result.Message = "Asset " + assetId + " retrieved"
+	return &result, nil
+}
+
 func (s *SmartContract) QueryAllAssets(ctx contractapi.TransactionContextInterface) ([]QueryResultAsset, error) {
 	assetCounter := getCounter(ctx, "AssetCounterNo")
 	assetCounter++
@@ -258,18 +467,24 @@ func (s *SmartContract) QueryAllAssets(ctx contractapi.TransactionContextInterfa
 	startKey := "ASSET0"
 	endKey := "ASSET" + strconv.Itoa(assetCounter)
 
-	resultsIterator, err := ctx.GetStub().GetStateByRange(startKey, endKey)
+	resultsIterator, _ := ctx.GetStub().GetStateByRange(startKey, endKey)
+
+	startQtyKey := "ASSETQTYASSET0"
+	endQtyKey := "ASSETQTYASSET" + strconv.Itoa(assetCounter)
+
+	resultsQtyIterator, err := ctx.GetStub().GetStateByRange(startQtyKey, endQtyKey)
 
 	if err != nil {
 		return nil, err
 	}
 	defer resultsIterator.Close()
+	defer resultsQtyIterator.Close()
 
 	results := []QueryResultAsset{}
 
 	for resultsIterator.HasNext() {
-		queryResponse, err := resultsIterator.Next()
-
+		queryResponse, _ := resultsIterator.Next()
+		queryQtyResponse, err := resultsQtyIterator.Next()
 		if err != nil {
 			return nil, err
 		}
@@ -277,10 +492,12 @@ func (s *SmartContract) QueryAllAssets(ctx contractapi.TransactionContextInterfa
 		asset := new(Asset)
 		_ = json.Unmarshal(queryResponse.Value, asset)
 
-		queryResult := QueryResultAsset{Key: queryResponse.Key, Record: asset}
+		assetQty := new(AssetAvailableQty)
+		_ = json.Unmarshal(queryQtyResponse.Value, assetQty)
+
+		queryResult := QueryResultAsset{Key: queryResponse.Key, Record: asset, RecordQty: assetQty}
 		results = append(results, queryResult)
 	}
-
 	return results, nil
 }
 
@@ -291,6 +508,7 @@ func (s *SmartContract) QueryAssetByOwner(ctx contractapi.TransactionContextInte
 	if err != nil {
 		return nil, err
 	}
+
 	defer resultsIterator.Close()
 
 	results := []QueryResultAsset{}
@@ -305,12 +523,17 @@ func (s *SmartContract) QueryAssetByOwner(ctx contractapi.TransactionContextInte
 
 		returnedAssetId := compositeKeyParts[1]
 
-		userAsBytes, _ := ctx.GetStub().GetState(returnedAssetId)
+		assetAsBytes, _ := ctx.GetStub().GetState(returnedAssetId)
 
 		asset := new(Asset)
-		_ = json.Unmarshal(userAsBytes, asset)
+		_ = json.Unmarshal(assetAsBytes, asset)
 
-		queryResult := QueryResultAsset{Key: returnedAssetId, Record: asset}
+		assetQtyAsBytes, _ := ctx.GetStub().GetState("ASSETQTY" + returnedAssetId)
+
+		assetQty := new(AssetAvailableQty)
+		_ = json.Unmarshal(assetQtyAsBytes, assetQty)
+
+		queryResult := QueryResultAsset{Key: returnedAssetId, Record: asset, RecordQty: assetQty}
 		results = append(results, queryResult)
 	}
 	return results, nil
@@ -451,6 +674,21 @@ func (s *SmartContract) SignIn(ctx contractapi.TransactionContextInterface, emai
 	return &result, nil
 }
 
+func (s *SmartContract) UpdateAssetAvailableQty(ctx contractapi.TransactionContextInterface, assetId string, quantity int) (*QueryResultStatusMessage, error) {
+	result := QueryResultStatusMessage{}
+	result.Status = false;
+
+	entitiesAssetQty, _ := s.QueryAssetAvailableQty(ctx, assetId)
+	assetQty := entitiesAssetQty.Record
+	assetQty.Quantity = assetQty.Quantity - quantity
+	assetQtyAsBytes, _ := json.Marshal(assetQty)
+	ctx.GetStub().PutState("ASSETQTY" + assetId, assetQtyAsBytes)
+
+	result.Message = "Asset quantity for " + assetId +  " updated" 
+	result.Status = true
+	return &result, nil
+}
+
 func (s *SmartContract) TransferAssetOwner(ctx contractapi.TransactionContextInterface, assetId string, newOwner string, timestamp string) (*QueryResultStatusMessage, error) {
 	result := QueryResultStatusMessage{}
 	result.Status = false;
@@ -581,7 +819,7 @@ func (s *SmartContract) CreateUser(ctx contractapi.TransactionContextInterface, 
 
 	indexName := "email~userid"
 
-	var comAsset = User{Name: name, User_ID: "User" + strconv.Itoa(userCounter), Email: email, Org: org, Role: role, Address: address, Password: password}
+	var comAsset = User{Name: name, User_ID: "USER" + strconv.Itoa(userCounter), Email: email, Org: org, Role: role, Address: address, Password: password}
 	comAssetAsBytes, _ := json.Marshal(comAsset)
 
 	emailCheck, _ := s.QueryUserByEmail(ctx, email)

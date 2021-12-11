@@ -108,6 +108,21 @@ app.get('/api/queryallassets', async function (req, res)  {
         }
     });
 
+ app.get('/api/queryallpo', async function (req, res)  {
+        try {         
+            var networkObj = await getNetwork(req.orgname, req.username);
+
+            const result = await networkObj.contract.evaluateTransaction('queryAllPO');
+            console.log(JSON.parse(result));
+            console.log(`Transaction has been evaluated, result is: ${result.toString()}`);
+            res.status(200).json({response: result.toString()});
+    } catch (error) {
+            console.error(`Failed to evaluate transaction: ${error}`);
+            res.status(500).json({error: error});
+            process.exit(1);
+        }
+});
+
 app.get('/api/queryallcounters', async function (req, res)  {
         try {
     const ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'manufacturer.example.com', 'connection-manufacturer.json');
@@ -233,6 +248,66 @@ app.get('/api/asset/history/:asset_index', async function (req, res) {
     } 
 })
 
+app.post('/api/order/add/:asset_index', async function (req, res) {
+    try {
+        var todayDateTime = new Date();   
+        var timestamp = [(todayDateTime.getMonth()+1).padLeft(),
+        todayDateTime.getDate().padLeft(),
+        todayDateTime.getFullYear()].join('/') +' ' +
+       [todayDateTime.getHours().padLeft(),
+        todayDateTime.getMinutes().padLeft(),
+        todayDateTime.getSeconds().padLeft()].join(':');
+
+        var networkObj = await getNetwork(req.orgname, req.username);
+
+        var result = await networkObj.contract.submitTransaction('createPurchaseOrder', req.params.asset_index, req.body.owner, req.body.quantity, timestamp);
+        
+        var message;
+        if(result.toString() == "false"){
+            message = "PO Creation failed";
+            res.status(400).json({response: message});
+        } else{
+            message = "PO Creation suceeded";
+            res.status(200).json({response: result.Message});
+        }
+        console.log(message);
+        await networkObj.gateway.disconnect();
+} catch (error) {
+        console.error(`Failed to submit transaction: ${error}`);
+        process.exit(1);
+    } 
+})
+
+app.put('/api/order/update/:asset_index', async function (req, res) {
+    try {
+        var todayDateTime = new Date();   
+        var timestamp = [(todayDateTime.getMonth()+1).padLeft(),
+        todayDateTime.getDate().padLeft(),
+        todayDateTime.getFullYear()].join('/') +' ' +
+       [todayDateTime.getHours().padLeft(),
+        todayDateTime.getMinutes().padLeft(),
+        todayDateTime.getSeconds().padLeft()].join(':');
+
+        var networkObj = await getNetwork(req.orgname, req.username);
+
+        var result = await networkObj.contract.submitTransaction('updatePurchaseOrderStatus', req.params.asset_index, req.body.updateby, timestamp);
+        
+        var message;
+        if(result.toString() == "false"){
+            message = "PO Creation failed";
+            res.status(400).json({response: message});
+        } else{
+            message = "PO Creation suceeded";
+            res.status(200).json({response: result.Message});
+        }
+        console.log(message);
+        await networkObj.gateway.disconnect();
+} catch (error) {
+        console.error(`Failed to submit transaction: ${error}`);
+        process.exit(1);
+    } 
+})
+
 app.put('/api/asset/transfer/:asset_index', async function (req, res) {
     try {
         var networkObj = await getNetwork(req.orgname, req.username);
@@ -261,7 +336,7 @@ app.put('/api/asset/update/:asset_index', async function (req, res) {
        [todayDateTime.getHours().padLeft(),
         todayDateTime.getMinutes().padLeft(),
         todayDateTime.getSeconds().padLeft()].join(':');
-        
+
         var networkObj = await getNetwork(req.orgname, req.username);
         var resultBuf = await networkObj.contract.submitTransaction('updateAsset', req.params.asset_index, req.body.name, req.body.number, req.body.status, req.body.quantity, req.body.weight, timestamp, req.username, req.body.newOwner);
         var result= JSON.parse(resultBuf.toString())
@@ -402,11 +477,6 @@ app.get('/api/initdata', async function (req, res)  {
             await networkObj.contract.submitTransaction('createAsset', asset[0], asset[1], asset[2], asset[3], asset[4], timestamp, "");
         }
         
-        console.log("Transfer ASSET 2 to chris");
-        await networkObj.contract.submitTransaction('transferAssetOwner', "ASSET2", "chris@gmail.com", timestamp);
-        console.log("Transfer ASSET 2 to nadim");
-        await networkObj.contract.submitTransaction('transferAssetOwner', "ASSET2", "nadim@gmail.com", timestamp);
-
         console.log("Init data success");
         res.status(200).json({response: "Init data success"});
         await networkObj.gateway.disconnect();

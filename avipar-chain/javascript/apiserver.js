@@ -150,9 +150,12 @@ app.get('/api/queryallcounters', async function (req, res)  {
     
 app.post('/api/asset/add', async function (req, res) {
     try {
+        var todayDateTime = new Date();   
+        var timestamp = todayDateTime.getUTCFullYear() +"-"+ (todayDateTime.getUTCMonth()+1) +"-"+ todayDateTime.getUTCDate() + " " + todayDateTime.getUTCHours() + ":" + todayDateTime.getUTCMinutes() + ":" + todayDateTime.getUTCSeconds();
+
         var networkObj = await getNetwork(req.orgname, req.username);
 
-        var resultBuf = await networkObj.contract.submitTransaction('createAsset', req.body.number, req.body.name, req.username, req.body.quantity, req.body.weight);
+        var resultBuf = await networkObj.contract.submitTransaction('createAsset', req.body.number, req.body.name, req.username, req.body.quantity, req.body.weight, timestamp, "");
         var result= JSON.parse(resultBuf.toString())
         if(result.toString() == "false"){
                 message = "Asset existed";
@@ -213,7 +216,7 @@ app.get('/api/asset/history/:asset_index', async function (req, res) {
     try {
         var networkObj = await getNetwork(req.orgname, req.username);
 
-        var resultBuf = await networkObj.contract.submitTransaction('queryAssetHistory', req.params.asset_index);
+        var resultBuf = await networkObj.contract.submitTransaction('queryAssetHistory', req.params.asset_index, "");
         var result= JSON.parse(resultBuf.toString())
         if(result.Status == false){
             res.status(400).json({response: result.Message});
@@ -234,7 +237,7 @@ app.put('/api/asset/transfer/:asset_index', async function (req, res) {
     try {
         var networkObj = await getNetwork(req.orgname, req.username);
 
-        var resultBuf = await networkObj.contract.submitTransaction('transferAssetOwner', req.params.asset_index, req.body.owner);
+        var resultBuf = await networkObj.contract.submitTransaction('transferAssetOwner', req.params.asset_index, req.body.owner, timestamp);
         var result= JSON.parse(resultBuf.toString())
         if(result.Status == false){
             res.status(400).json({response: result.Message});
@@ -251,9 +254,16 @@ app.put('/api/asset/transfer/:asset_index', async function (req, res) {
 
 app.put('/api/asset/update/:asset_index', async function (req, res) {
     try {
+        var todayDateTime = new Date();   
+        var timestamp = [(todayDateTime.getMonth()+1).padLeft(),
+        todayDateTime.getDate().padLeft(),
+        todayDateTime.getFullYear()].join('/') +' ' +
+       [todayDateTime.getHours().padLeft(),
+        todayDateTime.getMinutes().padLeft(),
+        todayDateTime.getSeconds().padLeft()].join(':');
+        
         var networkObj = await getNetwork(req.orgname, req.username);
-        console.log(req.body);
-        var resultBuf = await networkObj.contract.submitTransaction('updateAsset', req.params.asset_index, req.body.name, req.body.number, req.body.status, req.username, req.body.quantity);
+        var resultBuf = await networkObj.contract.submitTransaction('updateAsset', req.params.asset_index, req.body.name, req.body.number, req.body.status, req.body.quantity, req.body.weight, timestamp, req.username, req.body.newOwner);
         var result= JSON.parse(resultBuf.toString())
         if(result.Status == false){
             res.status(400).json({response: result.Message});
@@ -312,7 +322,7 @@ app.post('/api/signin/', async function (req, res) {
 
 app.post('/api/createuser/', async function (req, res) {
         try {
-            var networkObj = await getNetwork(req.body.org, req.username);
+            var networkObj = await getNetwork(req.body.org, "admin");
 
             var result = await networkObj.contract.submitTransaction('createUser', req.body.name, req.body.email, req.body.org, req.body.role, req.body.address, req.body.password);
             var message;
@@ -362,11 +372,21 @@ app.get('/api/user/:user_email', async function (req, res) {
     
 app.get('/api/initdata', async function (req, res)  {
     try {
+        var todayDateTime = new Date();   
+        var timestamp = [(todayDateTime.getMonth()+1).padLeft(),
+        todayDateTime.getDate().padLeft(),
+        todayDateTime.getFullYear()].join('/') +' ' +
+       [todayDateTime.getHours().padLeft(),
+        todayDateTime.getMinutes().padLeft(),
+        todayDateTime.getSeconds().padLeft()].join(':');
+
         var networkObj = await getNetwork("manufacturer", "admin");
         
         var users = [
             ["Payo", "payo@gmail.com", "manufacturer", "supervisor", "Cilegon", "payo"],
-            ["Nadim", "nadim@gmail.com", "airline", "supervisor", "Pamulang", "nadim"],
+            ["Chris", "chris@gmail.com", "vendor", "supervisor", "Daan Mogot", "chris"],
+            ["Nadim", "nadim@gmail.com", "mro", "supervisor", "Pamulang", "nadim"],
+            ["Christest", "christest@gmail.com", "airline", "supervisor", "Test", "123"],
         ]
         for (var user of users){
             await networkObj.contract.submitTransaction('createUser', user[0], user[1], user[2], user[3], user[4], user[5]);
@@ -375,12 +395,18 @@ app.get('/api/initdata', async function (req, res)  {
         
         var assets = [
             ["SPR001", "Buntut", "payo@gmail.com", 10, 2],
-            ["SPR002", "Ekor", "nadim@gmail.com", 50, 5],
+            ["SPR002", "Ekor", "payo@gmail.com", 50, 5],
         ]
         for (var asset of assets){
             console.log(asset);
-            await networkObj.contract.submitTransaction('createAsset', asset[0], asset[1], asset[2], asset[3], asset[4]);
+            await networkObj.contract.submitTransaction('createAsset', asset[0], asset[1], asset[2], asset[3], asset[4], timestamp, "");
         }
+        
+        console.log("Transfer ASSET 2 to chris");
+        await networkObj.contract.submitTransaction('transferAssetOwner', "ASSET2", "chris@gmail.com", timestamp);
+        console.log("Transfer ASSET 2 to nadim");
+        await networkObj.contract.submitTransaction('transferAssetOwner', "ASSET2", "nadim@gmail.com", timestamp);
+
         console.log("Init data success");
         res.status(200).json({response: "Init data success"});
         await networkObj.gateway.disconnect();
@@ -391,6 +417,9 @@ app.get('/api/initdata', async function (req, res)  {
      }
 });
 
-
+Number.prototype.padLeft = function(base,chr){
+    var  len = (String(base || 10).length - String(this).length)+1;
+    return len > 0? new Array(len).join(chr || '0')+this : this;
+}
 
 app.listen(8080);

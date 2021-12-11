@@ -13,8 +13,6 @@ import (
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
 )
 
-const TimeFormat string = "01-02-2006 15:04:05"
-
 // SmartContract provides functions for managing a car
 type SmartContract struct {
 	contractapi.Contract
@@ -31,10 +29,11 @@ type Asset struct {
 	Name 	 		 string `json:"Name"`
 	Owner          	 string `json:"Owner"`
 	Status			 string `json:"Status"`
-	UpdateDate       string `json:"UpdateDate"`
+	Timestamp        string `json:"Timestamp"`
 	Quantity         int    `json:"Quantity"`
 	Weight           int    `json:"Weight"`
 	Org       	     string `json:"Org"`
+	PreviousAsset    string `json:"PreviousAsset"`
 }
 
 type User struct {
@@ -136,6 +135,16 @@ func checkStatus(status string) bool {
 	return false
 }
 
+func parseDateTime (datetime string) time.Time {
+	layout := "01/02/2006 15:04:05"
+	time, err := time.Parse(layout, datetime)
+	if err != nil {
+    	fmt.Println(err)
+	}
+
+	return time
+}
+
 func (s *SmartContract) InitCounters(ctx contractapi.TransactionContextInterface) error {
 
 	// Initializing Car Counter
@@ -162,15 +171,21 @@ func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) 
 }
 
 // CreateAsset adds a new car to the world state with given details
-func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface, number string, name string, owner string, quantity int, weight int) (bool, error) {
+func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface, number string, name string, owner string, quantity int, weight int,timestamp string, previousAsset string) (bool, error) {
+	status := "Available"
+
 	entitiesUserEmail, _ := s.QueryUserByEmail(ctx, owner)
 	if !entitiesUserEmail.Status{
 		return false, nil
 	}
 	
 	userOrg := entitiesUserEmail.Record.Org
-	if userOrg != "manufacturer"{
+	if userOrg != "manufacturer" && (userOrg != "airline" && previousAsset != "") {
 		return false, nil
+	}
+
+	if userOrg == "airline"{
+		status = "Not Available"
 	}
 
 	assetCounter := getCounter(ctx, "AssetCounterNo")
@@ -183,12 +198,14 @@ func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface,
 		Number:   number,
 		Name:  name,
 		Owner: owner,
-		Status: "Available",
+		Status: status,
 		Quantity: quantity,
 		Weight: weight,
-		UpdateDate: time.Now().Format(TimeFormat),
+		Timestamp: timestamp,
 		Org: userOrg,
+		PreviousAsset: previousAsset,
 	}
+
 	assetAsBytes, _ := json.Marshal(asset)
 	assetCheck := []string {};
 	if len(assetCheck) > 0 {
@@ -299,7 +316,7 @@ func (s *SmartContract) QueryAssetByOwner(ctx contractapi.TransactionContextInte
 	return results, nil
 }
 
-func (s *SmartContract) QueryAssetHistory(ctx contractapi.TransactionContextInterface, assetId string) (QueryResultAssets, error) {
+func (s *SmartContract) QueryAssetHistory(ctx contractapi.TransactionContextInterface, assetId string, limitTimestamp string) (QueryResultAssets, error) {
 	result := QueryResultAssets{}
 	result.Key = assetId
 	result.Status = false
@@ -309,15 +326,32 @@ func (s *SmartContract) QueryAssetHistory(ctx contractapi.TransactionContextInte
 		result.Message = "Can't get history for " + assetId
 		return result, nil
 	}
-	defer resultsIterator.Close()
 
+	limitTime := time.Time{}
+	if limitTimestamp != ""{
+		limitTime = parseDateTime(limitTimestamp);
+	}
+	
 	for resultsIterator.HasNext() {
 		queryResponse,_ := resultsIterator.Next()
 
 		asset := new(Asset)
 		_ = json.Unmarshal(queryResponse.Value, asset)
 
+		if limitTimestamp != "" {
+			assetTime := parseDateTime(asset.Timestamp)
+			if assetTime.After(limitTime) || assetTime.Equal(limitTime){
+				continue
+			}
+		} 
+		
 		result.Record = append(result.Record, *asset)
+	}
+
+	firstAsset := result.Record[len(result.Record)-1]
+	if firstAsset.PreviousAsset != "" {
+		previousResult, _ := s.QueryAssetHistory(ctx, firstAsset.PreviousAsset, firstAsset.Timestamp)
+		result.Record = append(result.Record, previousResult.Record...)
 	}
 
 	result.Status = true
@@ -417,7 +451,7 @@ func (s *SmartContract) SignIn(ctx contractapi.TransactionContextInterface, emai
 	return &result, nil
 }
 
-func (s *SmartContract) TransferAssetOwner(ctx contractapi.TransactionContextInterface, assetId string, newOwner string) (*QueryResultStatusMessage, error) {
+func (s *SmartContract) TransferAssetOwner(ctx contractapi.TransactionContextInterface, assetId string, newOwner string, timestamp string) (*QueryResultStatusMessage, error) {
 	result := QueryResultStatusMessage{}
 	result.Status = false;
 
@@ -428,7 +462,7 @@ func (s *SmartContract) TransferAssetOwner(ctx contractapi.TransactionContextInt
 	userOrg := entitiesUserEmail.Record.Org
 
 	entitiesNewUserEmail, _ := s.QueryUserByEmail(ctx, newOwner)
-	if entitiesNewUserEmail.Status ==  false{
+	if !entitiesNewUserEmail.Status {
 		result.Message = "New Owner not existed"
 		return &result, nil
 	}
@@ -461,8 +495,8 @@ func (s *SmartContract) TransferAssetOwner(ctx contractapi.TransactionContextInt
 	}
 
 	asset.Owner = newOwner
-	asset.Org = userOrg
-	asset.UpdateDate = time.Now().Format(TimeFormat)
+	asset.Org = newUserOrg
+	asset.Timestamp = timestamp
 	assetAsBytes, _ := json.Marshal(asset)
 	ctx.GetStub().PutState(assetId, assetAsBytes)
 
@@ -479,7 +513,7 @@ func (s *SmartContract) TransferAssetOwner(ctx contractapi.TransactionContextInt
 	return &result, nil
 }
 
-func (s *SmartContract) UpdateAsset(ctx contractapi.TransactionContextInterface, assetId string, name string, number string, status string, quantity int, weight int, updateBy string) (*QueryResultStatusMessage, error) {
+func (s *SmartContract) UpdateAsset(ctx contractapi.TransactionContextInterface, assetId string, name string, number string, status string, quantity int, weight int, timestamp string, updateBy string, newOwner string) (*QueryResultStatusMessage, error) {
 	result := QueryResultStatusMessage{}
 	result.Status = false;
 
@@ -492,13 +526,26 @@ func (s *SmartContract) UpdateAsset(ctx contractapi.TransactionContextInterface,
 	queryAsset, _ := s.QueryAsset(ctx, assetId)
 	asset := queryAsset.Record
 
+	if newOwner != "" {
+		tempQuantity := quantity
+		quantity = asset.Quantity - quantity
+		if quantity < 0 {
+			result.Message = "Spare part doesn't have enough quantity"
+			return &result, nil
+		} else if quantity == 0 {
+			status = "Not Available"
+		}
+		s.CreateAsset(ctx, asset.Number, asset.Name, newOwner, tempQuantity, asset.Weight, timestamp, assetId)
+	
+	}
+
 	entitiesUserEmail, _ := s.QueryUserByEmail(ctx, asset.Owner)
 	userOrg := entitiesUserEmail.Record.Org
 
 	entitiesUpdateUserEmail, _ := s.QueryUserByEmail(ctx, updateBy)
 	updateUserOrg := entitiesUpdateUserEmail.Record.Org
 	
-	if userOrg != updateUserOrg{
+	if newOwner == "" && userOrg != updateUserOrg{
 		result.Message = "You are not from " + userOrg + " organization"
 		return &result, nil
 	}
@@ -519,7 +566,7 @@ func (s *SmartContract) UpdateAsset(ctx contractapi.TransactionContextInterface,
 		asset.Weight = weight
 	}
 
-	asset.UpdateDate = time.Now().Format(TimeFormat)
+	asset.Timestamp = timestamp
 	assetAsBytes, _ := json.Marshal(asset)
 	ctx.GetStub().PutState(assetId, assetAsBytes)
 

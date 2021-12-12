@@ -153,12 +153,17 @@ func getCounter(ctx contractapi.TransactionContextInterface, AssetType string) i
 }
 
 //incrementCounter to the increase value of the counter based on the Asset Type provided as input parameter by 1
-func incrementCounter(ctx contractapi.TransactionContextInterface, AssetType string) int {
+func (s *SmartContract) incrementCounter(ctx contractapi.TransactionContextInterface, AssetType string, ManualIncrement int) int {
 	counterAsBytes, _ := ctx.GetStub().GetState(AssetType)
 	counterAsset := CounterNo{}
 
 	json.Unmarshal(counterAsBytes, &counterAsset)
-	counterAsset.Counter++
+	if ManualIncrement != -1 {
+		counterAsset.Counter = ManualIncrement
+	} else{
+		counterAsset.Counter++
+	}
+	
 	counterAsBytes, _ = json.Marshal(counterAsset)
 
 	err := ctx.GetStub().PutState(AssetType, counterAsBytes)
@@ -273,9 +278,9 @@ func (s *SmartContract) CreatePurchaseOrder(ctx contractapi.TransactionContextIn
 	value := []byte{0x00}
 	ctx.GetStub().PutState(indexKey, value)
 
-	s.UpdateAssetAvailableQty(ctx, po.AssetID, po.Quantity)
+	s.UpdateAssetAvailableQty(ctx, po.AssetID, po.Quantity, -1)
 
-	incrementCounter(ctx, "POCounterNo")
+	s.incrementCounter(ctx, "POCounterNo", -1)
 	
 	return true, errPut;
 }
@@ -339,43 +344,37 @@ func (s *SmartContract) CreateRepairOrder(ctx contractapi.TransactionContextInte
 		status = "Waiting for Repairer Organization"
 	}
 
-	queryAsset, _ := s.QueryAsset(ctx, assetId)
-	asset := queryAsset.Record
-
-	entitiesSellerEmail, _ := s.QueryUserByEmail(ctx, asset.Owner)
-	seller := entitiesSellerEmail.Record
+	roCounter := getCounter(ctx, "ROCounterNo")
+	roCounter++
 	
-	poCounter := getCounter(ctx, "ROCounterNo")
-	poCounter++
-	
-	indexName := "owner~Roid"
+	indexName := "owner~roid"
 
-	po := RepairOrder{
-		ID: "RO" +  strconv.Itoa(poCounter),
+	ro := RepairOrder{
+		ID: "RO" +  strconv.Itoa(roCounter),
 		AssetID: assetId,
 		RequesterEmail: email,
 		Status: status,
 		RequesterOrg: user.Org,
-		RepairerOrg: seller.Org,
+		RepairerOrg: "mro",
 		Timestamp: timestamp,
 	}
 
-	poAsBytes, _ := json.Marshal(po)
-	errPut := ctx.GetStub().PutState("RO" + strconv.Itoa(poCounter), poAsBytes)
+	roAsBytes, _ := json.Marshal(ro)
+	errPut := ctx.GetStub().PutState("RO" + strconv.Itoa(roCounter), roAsBytes)
 	if errPut != nil {
-		return false, fmt.Errorf(fmt.Sprintf("Failed to create RO: %s", po.ID))
+		return false, fmt.Errorf(fmt.Sprintf("Failed to create RO: %s", ro.ID))
 	}
 
-	indexKey, err := ctx.GetStub().CreateCompositeKey(indexName, []string{po.RequesterEmail, "RO" + strconv.Itoa(poCounter)})
+	indexKey, err := ctx.GetStub().CreateCompositeKey(indexName, []string{ro.RequesterEmail, "RO" + strconv.Itoa(roCounter)})
 	if err != nil {
-		return false, fmt.Errorf(fmt.Sprintf("Failed to create RO composite key: %s", po.ID))
+		return false, fmt.Errorf(fmt.Sprintf("Failed to create RO composite key: %s", ro.ID))
 	}
 	value := []byte{0x00}
 	ctx.GetStub().PutState(indexKey, value)
 
-	s.UpdateAsset(ctx, assetId, "", "", "Requesting Repair", -1, -1, timestamp, email, "", nil, nil)
+	s.UpdateAsset(ctx, assetId, "", "", "Requesting Repair", -1, -1, timestamp, email, "", nil, &ro)
 
-	incrementCounter(ctx, "ROCounterNo")
+	s.incrementCounter(ctx, "ROCounterNo", -1)
 	
 	return true, errPut;
 }
@@ -406,11 +405,15 @@ func (s *SmartContract) UpdateRepairOrderStatus(ctx contractapi.TransactionConte
 
 	if ro.Status == "Waiting for Requester Organization" && requester.Org == updateUser.Org {
 		ro.Status = "Waiting for Repairer Organization"
-	} else if ro.Status == "Waiting for Repairer Organization" && user.Org == updateUser.Org {
+	} else if ro.Status == "Waiting for Repairer Organization" && ro.RepairerOrg == updateUser.Org {
 		s.UpdateAsset(ctx, asset.ID, asset.Name, asset.Number, "Repairing", asset.Quantity, asset.Weight, timestamp, updateBy, "", nil, ro)
 		ro.Status = "Repairing"
-	} else if ro.Status == "Repairing" && user.Org == updateUser.Org {
-		s.UpdateAsset(ctx, asset.ID, asset.Name, asset.Number, "Available", asset.Quantity, asset.Weight, timestamp, updateBy, "", nil, ro)
+	} else if ro.Status == "Repairing" && ro.RepairerOrg == updateUser.Org {
+		tempStatus := "Available"
+		if user.Org == "airline"{
+			tempStatus = "Not Available"
+		} 
+		s.UpdateAsset(ctx, asset.ID, asset.Name, asset.Number, tempStatus, asset.Quantity, asset.Weight, timestamp, updateBy, "", nil, ro)
 		ro.Status = "Completed"
 	}else if ro.Status == "Completed"{
 		result.Message = "RO is already completed"
@@ -429,7 +432,7 @@ func (s *SmartContract) UpdateRepairOrderStatus(ctx contractapi.TransactionConte
 	return &result, nil
 }
 
-func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface, number string, name string, owner string, quantity int, weight int,timestamp string, previousAsset string, poReference *PurchaseOrder, roReference *RepairOrder) (bool, error) {
+func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface, number string, name string, owner string, quantity int, weight int,timestamp string, previousAsset string, poReference *PurchaseOrder, roReference *RepairOrder, manualCounter int) (bool, error) {
 	status := "Available"
 
 	entitiesUserEmail, _ := s.QueryUserByEmail(ctx, owner)
@@ -447,6 +450,10 @@ func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface,
 	}
 
 	assetCounter := getCounter(ctx, "AssetCounterNo")
+	if manualCounter != -1{
+		assetCounter = manualCounter
+	} 
+	
 	assetCounter++
 
 	asset := Asset{
@@ -494,14 +501,14 @@ func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface,
 		value := []byte{0x00}
 		ctx.GetStub().PutState(indexKey, value)
 
-		incrementCounter(ctx, "AssetCounterNo")
+		s.incrementCounter(ctx, "AssetCounterNo", -1)
 		
 		return true, errPut;
 	}
 }
 
 func (s *SmartContract) CreateAssetAPI(ctx contractapi.TransactionContextInterface, number string, name string, owner string, quantity int, weight int,timestamp string, previousAsset string) (bool, error) {
-	return s.CreateAsset(ctx, number, name, owner, quantity, weight, previousAsset, timestamp, nil, nil);
+	return s.CreateAsset(ctx, number, name, owner, quantity, weight, previousAsset, timestamp, nil, nil, -1);
 }
 
 func (s *SmartContract) QueryRO(ctx contractapi.TransactionContextInterface, roId string) (*QueryResultRO, error) {
@@ -855,13 +862,18 @@ func (s *SmartContract) SignIn(ctx contractapi.TransactionContextInterface, emai
 	return &result, nil
 }
 
-func (s *SmartContract) UpdateAssetAvailableQty(ctx contractapi.TransactionContextInterface, assetId string, quantity int) (*QueryResultStatusMessage, error) {
+func (s *SmartContract) UpdateAssetAvailableQty(ctx contractapi.TransactionContextInterface, assetId string, quantity int, forceQuantity int) (*QueryResultStatusMessage, error) {
 	result := QueryResultStatusMessage{}
 	result.Status = false;
 
 	entitiesAssetQty, _ := s.QueryAssetAvailableQty(ctx, assetId)
 	assetQty := entitiesAssetQty.Record
-	assetQty.Quantity = assetQty.Quantity - quantity
+	if forceQuantity == -1 {
+		assetQty.Quantity = assetQty.Quantity - quantity
+	} else {
+		assetQty.Quantity = forceQuantity
+	}
+	
 	assetQtyAsBytes, _ := json.Marshal(assetQty)
 	ctx.GetStub().PutState("ASSETQTY" + assetId, assetQtyAsBytes)
 
@@ -964,15 +976,18 @@ func (s *SmartContract) UpdateAsset(ctx contractapi.TransactionContextInterface,
 			status = "Not Available"
 		}
 		if newOwnerOrg == "airline"{
-			for i := 0; i < quantity; i++ {
-    			s.CreateAsset(ctx, asset.Number, asset.Name, newOwner, 1, asset.Weight, timestamp, assetId, poReference, roReference)
+			assetCounter := getCounter(ctx, "AssetCounterNo")
+			for i := 0; i < tempQuantity; i++ {
+    			s.CreateAsset(ctx, asset.Number, asset.Name, newOwner, 1, asset.Weight, timestamp, assetId, poReference, roReference, assetCounter)
+				assetCounter++
 			}
+			s.incrementCounter(ctx, "AssetCounterNo", assetCounter)
 		} else{
-			s.CreateAsset(ctx, asset.Number, asset.Name, newOwner, tempQuantity, asset.Weight, timestamp, assetId, poReference, roReference)
+			s.CreateAsset(ctx, asset.Number, asset.Name, newOwner, tempQuantity, asset.Weight, timestamp, assetId, poReference, roReference, -1)
 		}
 	}
 	
-	if newOwner == "" && userOrg != updateUserOrg{
+	if roReference == nil && (newOwner == "" && userOrg != updateUserOrg){
 		result.Message = "You are not from " + userOrg + " organization"
 		return &result, nil
 	}
@@ -988,11 +1003,12 @@ func (s *SmartContract) UpdateAsset(ctx contractapi.TransactionContextInterface,
 	}
 	if quantity != -1 {
 		asset.Quantity = quantity
+		s.UpdateAssetAvailableQty(ctx,assetId, quantity, quantity)
 	}
 	if weight != -1 {
 		asset.Weight = weight
 	}
-	
+	asset.PreviousAsset = "";
 	asset.PurchaseOrderReference = poReference;
 	asset.RepairOrderReference = roReference;
 	asset.Timestamp = timestamp
@@ -1002,6 +1018,10 @@ func (s *SmartContract) UpdateAsset(ctx contractapi.TransactionContextInterface,
 	result.Message = "Spare part " + assetId +  " updated" 
 	result.Status = true
 	return &result, nil
+}
+
+func (s *SmartContract) UpdateAssetAPI(ctx contractapi.TransactionContextInterface, assetId string, name string, number string, status string, quantity int, weight int, timestamp string, updateBy string, newOwner string) (*QueryResultStatusMessage, error) {
+	return s.UpdateAsset(ctx, assetId, name, number, status, quantity, weight, timestamp, updateBy, newOwner, nil, nil)
 }
 
 func (s *SmartContract) CreateUser(ctx contractapi.TransactionContextInterface, name string, email string, org string, role string, address string, password string) (bool, error) {
@@ -1032,7 +1052,7 @@ func (s *SmartContract) CreateUser(ctx contractapi.TransactionContextInterface, 
 		ctx.GetStub().PutState(emailUseridIndexKey, value)
 
 		//TO Increment the User Counter
-		incrementCounter(ctx, "UserCounterNo")
+		s.incrementCounter(ctx, "UserCounterNo", -1)
 		
 		return true, errPut;
 	}

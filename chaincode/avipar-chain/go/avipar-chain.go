@@ -28,10 +28,14 @@ type Asset struct {
 	Name 	 		 string `json:"Name"`
 	Owner          	 string `json:"Owner"`
 	Status			 string `json:"Status"`
+	CreateDate       string `json:"CreateDate"`
 	Timestamp        string `json:"Timestamp"`
 	Quantity         int    `json:"Quantity"`
 	Weight           int    `json:"Weight"`
 	Org       	     string `json:"Org"` 
+	FlightLog	     string `json:"FlightLog"` 
+	NextOverhaul	 string `json:"NextOverhaul"` 
+	TotalHoursSpend	 int   `json:"TotalHoursSpend"` 
 	PurchaseOrderReference    *PurchaseOrder `json:"PurchaseOrderReference"`
 	RepairOrderReference      *RepairOrder `json:"RepairOrderReference"`
 	PreviousAsset    string `json:"PreviousAsset"`
@@ -44,23 +48,27 @@ type AssetAvailableQty struct {
 
 type PurchaseOrder struct{
 	ID             	 string `json:"ID"`
-	AssetID          string `json:"AssetID"`
+	AssetID         string `json:"AssetID"`
+	AssetName         string `json:"AssetName"`
 	BuyerEmail	     string `json:"BuyerEmail"`
 	Quantity         int    `json:"Quantity"`
 	Status			 string `json:"Status"`
 	BuyerOrg         string `json:"BuyerOrg"`
 	SellerOrg         string `json:"SellerOrg"`
 	Timestamp        string `json:"Timestamp"`
+	InvoiceReferenceNo string `json:"InvoiceReferenceNo"`
 }
 
 type RepairOrder struct{
 	ID             	 string `json:"ID"`
 	AssetID          string `json:"AssetID"`
+	AssetName         string `json:"AssetName"`
 	RequesterEmail	 string `json:"RequesterEmail"`
 	Status			 string `json:"Status"`
 	RequesterOrg     string `json:"RequesterOrg"`
 	RepairerOrg      string `json:"RepairerOrg"`
 	Timestamp        string `json:"Timestamp"`
+	InvoiceReferenceNo string `json:"InvoiceReferenceNo"`
 }
 
 type User struct {
@@ -73,7 +81,6 @@ type User struct {
 	Password  string `json:"Password"`
 }
 
-// QueryResult structure used for handling result of query
 type QueryResultAsset struct {
 	Key    string `json:"Key"`
 	Record *Asset
@@ -219,10 +226,13 @@ func (s *SmartContract) InitCounters(ctx contractapi.TransactionContextInterface
 	ROCounterBytes, _ := json.Marshal(ROCounter)
 	ctx.GetStub().PutState("ROCounterNo", ROCounterBytes)
 
+	var InvoiceCounter = CounterNo{Counter: 0}
+	InvoiceCounterBytes, _ := json.Marshal(InvoiceCounter)
+	ctx.GetStub().PutState("INVCounterNo", InvoiceCounterBytes)
+
 	return nil
 }
 
-// InitLedger adds a base set of cars to the ledger
 func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) error {
 	// Initializing Car Counter
 	s.InitCounters(ctx)
@@ -256,7 +266,8 @@ func (s *SmartContract) CreatePurchaseOrder(ctx contractapi.TransactionContextIn
 
 	po := PurchaseOrder{
 		ID: "PO" +  strconv.Itoa(poCounter),
-		AssetID: assetId,
+		AssetID: asset.ID,
+		AssetName: asset.Name,
 		BuyerEmail: email,
 		Status: status,
 		Quantity: quantity,
@@ -285,12 +296,14 @@ func (s *SmartContract) CreatePurchaseOrder(ctx contractapi.TransactionContextIn
 	return true, errPut;
 }
 
-func (s *SmartContract) UpdatePurchaseOrderStatus(ctx contractapi.TransactionContextInterface, poId string, updateBy string, timestamp string) (*QueryResultStatusMessage, error) {
+func (s *SmartContract) UpdatePurchaseOrderStatus(ctx contractapi.TransactionContextInterface, poId string, updateBy string, timestamp string, approve bool) (*QueryResultStatusMessage, error) {
 	result := QueryResultStatusMessage{}
 	result.Status = false;
 
 	queryPO, _ := s.QueryPO(ctx, poId)
 	po := queryPO.Record
+
+	po.Timestamp = timestamp
 
 	entitiesBuyerEmail, _ := s.QueryUserByEmail(ctx, po.BuyerEmail)
 	buyer := entitiesBuyerEmail.Record
@@ -309,20 +322,38 @@ func (s *SmartContract) UpdatePurchaseOrderStatus(ctx contractapi.TransactionCon
 		return &result, nil
 	}
 
-	if po.Status == "Waiting for Buyer Organization" && buyer.Org == updateUser.Org {
-		po.Status = "Waiting for Seller Organization"
-	} else if po.Status == "Waiting for Seller Organization" && user.Org == updateUser.Org {
-		s.UpdateAsset(ctx, asset.ID, asset.Name, asset.Number, asset.Status, po.Quantity, asset.Weight, timestamp, updateBy, buyer.Email, po, nil)
-		po.Status = "Completed"
-	} else if po.Status == "Completed"{
-		result.Message = "PO is already completed"
-		return &result, nil
-	} else {
-		result.Message = "PO update failed"
-		return &result, nil
+	if approve {
+		if po.Status == "Waiting for Buyer Organization" && buyer.Org == updateUser.Org {
+			po.Status = "Waiting for Seller Organization"
+		} else if po.Status == "Waiting for Seller Organization" && user.Org == updateUser.Org {
+			po.InvoiceReferenceNo = s.CreateInvoice(ctx)
+			po.Status = "Completed"
+			s.UpdateAsset(ctx, asset.ID, asset.Name, asset.Number, asset.Status, po.Quantity, asset.Weight, timestamp, updateBy, buyer.Email, po, nil)
+		
+			po.AssetID = asset.ID
+			po.AssetName = asset.Name
+		} else if po.Status == "Completed"{
+			result.Message = "PO is already completed"
+			return &result, nil
+		} else {
+			result.Message = "PO update failed"
+			return &result, nil
+		}
+	} else{
+		if po.Status != "Completed"{
+			entitiesAssetQty, _ := s.QueryAssetAvailableQty(ctx, po.AssetID)
+			assetQty := entitiesAssetQty.Record
+
+			quantity := po.Quantity + assetQty.Quantity
+			s.UpdateAssetAvailableQty(ctx, po.AssetID, po.Quantity, quantity)
+			
+			po.Status = "Incomplete"
+		} else{
+			result.Message = "PO already completed"
+			return &result, nil
+		}
 	}
 
-	po.Timestamp = timestamp
 	poAsBytes, _ := json.Marshal(po)
 	ctx.GetStub().PutState(poId, poAsBytes)
 
@@ -339,6 +370,11 @@ func (s *SmartContract) CreateRepairOrder(ctx contractapi.TransactionContextInte
 		return false, nil
 	}
 
+	queryAsset, _ := s.QueryAsset(ctx, assetId)
+	asset := queryAsset.Record
+	asset.Timestamp = timestamp
+	asset.Status = "Requesting Repair"
+
 	user := entitiesUserEmail.Record
 	if user.Role == "supervisor" {
 		status = "Waiting for Repairer Organization"
@@ -351,7 +387,8 @@ func (s *SmartContract) CreateRepairOrder(ctx contractapi.TransactionContextInte
 
 	ro := RepairOrder{
 		ID: "RO" +  strconv.Itoa(roCounter),
-		AssetID: assetId,
+		AssetID: asset.ID,
+		AssetName: asset.Name,
 		RequesterEmail: email,
 		Status: status,
 		RequesterOrg: user.Org,
@@ -379,12 +416,14 @@ func (s *SmartContract) CreateRepairOrder(ctx contractapi.TransactionContextInte
 	return true, errPut;
 }
 
-func (s *SmartContract) UpdateRepairOrderStatus(ctx contractapi.TransactionContextInterface, roId string, updateBy string, timestamp string) (*QueryResultStatusMessage, error) {
+func (s *SmartContract) UpdateRepairOrderStatus(ctx contractapi.TransactionContextInterface, roId string, updateBy string, timestamp string, approve bool) (*QueryResultStatusMessage, error) {
 	result := QueryResultStatusMessage{}
 	result.Status = false;
 
 	queryRO, _ := s.QueryRO(ctx, roId)
 	ro := queryRO.Record
+
+	ro.Timestamp = timestamp
 
 	entitiesRequesterEmail, _ := s.QueryUserByEmail(ctx, ro.RequesterEmail)
 	requester := entitiesRequesterEmail.Record
@@ -403,27 +442,40 @@ func (s *SmartContract) UpdateRepairOrderStatus(ctx contractapi.TransactionConte
 		return &result, nil
 	}
 
-	if ro.Status == "Waiting for Requester Organization" && requester.Org == updateUser.Org {
-		ro.Status = "Waiting for Repairer Organization"
-	} else if ro.Status == "Waiting for Repairer Organization" && ro.RepairerOrg == updateUser.Org {
-		s.UpdateAsset(ctx, asset.ID, asset.Name, asset.Number, "Repairing", asset.Quantity, asset.Weight, timestamp, updateBy, "", nil, ro)
-		ro.Status = "Repairing"
-	} else if ro.Status == "Repairing" && ro.RepairerOrg == updateUser.Org {
-		tempStatus := "Available"
-		if user.Org == "airline"{
-			tempStatus = "Not Available"
-		} 
-		s.UpdateAsset(ctx, asset.ID, asset.Name, asset.Number, tempStatus, asset.Quantity, asset.Weight, timestamp, updateBy, "", nil, ro)
-		ro.Status = "Completed"
-	}else if ro.Status == "Completed"{
-		result.Message = "RO is already completed"
-		return &result, nil
-	} else {
-		result.Message = "RO update failed"
-		return &result, nil
+	if approve {
+		if ro.Status == "Waiting for Requester Organization" && requester.Org == updateUser.Org {
+			ro.Status = "Waiting for Repairer Organization"
+		} else if ro.Status == "Waiting for Repairer Organization" && ro.RepairerOrg == updateUser.Org {
+			s.UpdateAsset(ctx, asset.ID, asset.Name, asset.Number, "Repairing", asset.Quantity, asset.Weight, timestamp, updateBy, "", nil, ro)
+			ro.Status = "Repairing"
+		} else if ro.Status == "Repairing" && ro.RepairerOrg == updateUser.Org {
+			tempStatus := "Available"
+			if user.Org == "airline"{
+				tempStatus = "Not Available"
+			} 
+			ro.InvoiceReferenceNo =  s.CreateInvoice(ctx)
+			ro.Status = "Completed"
+			s.UpdateAsset(ctx, asset.ID, asset.Name, asset.Number, tempStatus, asset.Quantity, asset.Weight, timestamp, updateBy, "", nil, ro)
+		}else if ro.Status == "Completed"{
+			result.Message = "RO is already completed"
+			return &result, nil
+		} else {
+			result.Message = "RO update failed"
+			return &result, nil
+		}
+	} else{
+		if ro.Status != "Completed" && ro.Status != "Repairing" {
+			ro.Status = "Incomplete"
+			s.UpdateAsset(ctx, asset.ID, asset.Name, asset.Number, "Available", asset.Quantity, asset.Weight, timestamp, updateBy, "", nil, ro)
+		} else if ro.Status == "Completed"{
+			result.Message = "PO already completed"
+			return &result, nil
+		} else if ro.Status == "Repairing"{
+			result.Message = "PO is repairing"
+			return &result, nil
+		}
 	}
-
-	ro.Timestamp = timestamp
+	
 	roAsBytes, _ := json.Marshal(ro)
 	ctx.GetStub().PutState(roId, roAsBytes)
 
@@ -432,7 +484,16 @@ func (s *SmartContract) UpdateRepairOrderStatus(ctx contractapi.TransactionConte
 	return &result, nil
 }
 
-func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface, number string, name string, owner string, quantity int, weight int,timestamp string, previousAsset string, poReference *PurchaseOrder, roReference *RepairOrder, manualCounter int) (bool, error) {
+func (s *SmartContract) CreateInvoice(ctx contractapi.TransactionContextInterface) string{
+	invCounter := getCounter(ctx, "INVCounterNo")
+	invCounter++
+
+	invoiceNo := fmt.Sprintf("%010d", invCounter)
+
+	return "INV" + invoiceNo
+}
+
+func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface, number string, name string, owner string, quantity int, weight int,timestamp string, previousAsset string, poReference *PurchaseOrder, roReference *RepairOrder, manualCounter int, createDate string) (bool, error) {
 	status := "Available"
 
 	entitiesUserEmail, _ := s.QueryUserByEmail(ctx, owner)
@@ -447,7 +508,11 @@ func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface,
 
 	if userOrg == "airline"{
 		status = "Not Available"
-	}
+	} 
+
+	if userOrg == "manufacturer"{
+		createDate = timestamp
+	} 
 
 	assetCounter := getCounter(ctx, "AssetCounterNo")
 	if manualCounter != -1{
@@ -464,10 +529,12 @@ func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface,
 		Status: status,
 		Quantity: quantity,
 		Weight: weight,
+		CreateDate: createDate,
 		Timestamp: timestamp,
 		Org: userOrg,
 		PurchaseOrderReference: poReference,
 		RepairOrderReference: roReference,
+		TotalHoursSpend: -1,
 		PreviousAsset: previousAsset,
 	}
 
@@ -507,8 +574,8 @@ func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface,
 	}
 }
 
-func (s *SmartContract) CreateAssetAPI(ctx contractapi.TransactionContextInterface, number string, name string, owner string, quantity int, weight int,timestamp string, previousAsset string) (bool, error) {
-	return s.CreateAsset(ctx, number, name, owner, quantity, weight, previousAsset, timestamp, nil, nil, -1);
+func (s *SmartContract) CreateAssetAPI(ctx contractapi.TransactionContextInterface, number string, name string, owner string, quantity int, weight int,timestamp string, previousAsset string, createDate string) (bool, error) {
+	return s.CreateAsset(ctx, number, name, owner, quantity, weight, previousAsset, timestamp, nil, nil, -1, createDate);
 }
 
 func (s *SmartContract) QueryRO(ctx contractapi.TransactionContextInterface, roId string) (*QueryResultRO, error) {
@@ -944,8 +1011,43 @@ func (s *SmartContract) TransferAssetOwner(ctx contractapi.TransactionContextInt
 	return &result, nil
 }
 
-func (s *SmartContract) UpdateAsset(ctx contractapi.TransactionContextInterface, assetId string, name string, number string, status string, quantity int, weight int, timestamp string, updateBy string, newOwner string, poReference *PurchaseOrder, roReference *RepairOrder) (*QueryResultStatusMessage, error) {
+func (s *SmartContract) UpdateAirlineAsset(ctx contractapi.TransactionContextInterface, assetId string, flightLog string, nextOverhaul string, totalHoursSpend int, status string, updateBy string, timestamp string) (*QueryResultStatusMessage, error) {
 	result := QueryResultStatusMessage{}
+	result.Status = false;
+
+	statusCheck := checkStatus(status)
+	if !statusCheck {
+		result.Message = "Status " + status + " not valid"
+		return &result, nil
+	}
+
+	queryAsset, _ := s.QueryAsset(ctx, assetId)
+	asset := queryAsset.Record
+
+	if flightLog != "" {
+		asset.FlightLog = flightLog
+	}
+	if nextOverhaul != "" {
+		asset.NextOverhaul = nextOverhaul
+	}
+	if totalHoursSpend != -1 {
+		asset.TotalHoursSpend = totalHoursSpend
+	}
+	asset.PreviousAsset = "";
+	asset.PurchaseOrderReference = nil;
+	asset.RepairOrderReference = nil;
+	asset.Status = status;
+	asset.Timestamp = timestamp
+	assetAsBytes, _ := json.Marshal(asset)
+	ctx.GetStub().PutState(assetId, assetAsBytes)
+
+	result.Message = "Spare part " + assetId +  " updated" 
+	result.Status = true
+	return &result, nil
+}
+
+func (s *SmartContract) UpdateAsset(ctx contractapi.TransactionContextInterface, assetId string, name string, number string, status string, quantity int, weight int, timestamp string, updateBy string, newOwner string, poReference *PurchaseOrder, roReference *RepairOrder) (*QueryResultAsset, error) {
+	result := QueryResultAsset{}
 	result.Status = false;
 
 	statusCheck := checkStatus(status)
@@ -978,12 +1080,12 @@ func (s *SmartContract) UpdateAsset(ctx contractapi.TransactionContextInterface,
 		if newOwnerOrg == "airline"{
 			assetCounter := getCounter(ctx, "AssetCounterNo")
 			for i := 0; i < tempQuantity; i++ {
-    			s.CreateAsset(ctx, asset.Number, asset.Name, newOwner, 1, asset.Weight, timestamp, assetId, poReference, roReference, assetCounter)
+    			s.CreateAsset(ctx, asset.Number, asset.Name, newOwner, 1, asset.Weight, timestamp, assetId, poReference, roReference, assetCounter, asset.CreateDate)
 				assetCounter++
 			}
 			s.incrementCounter(ctx, "AssetCounterNo", assetCounter)
 		} else{
-			s.CreateAsset(ctx, asset.Number, asset.Name, newOwner, tempQuantity, asset.Weight, timestamp, assetId, poReference, roReference, -1)
+			s.CreateAsset(ctx, asset.Number, asset.Name, newOwner, tempQuantity, asset.Weight, timestamp, assetId, poReference, roReference, -1, asset.CreateDate)
 		}
 	}
 	
@@ -1015,12 +1117,13 @@ func (s *SmartContract) UpdateAsset(ctx contractapi.TransactionContextInterface,
 	assetAsBytes, _ := json.Marshal(asset)
 	ctx.GetStub().PutState(assetId, assetAsBytes)
 
+	result.Record = asset
 	result.Message = "Spare part " + assetId +  " updated" 
 	result.Status = true
 	return &result, nil
 }
 
-func (s *SmartContract) UpdateAssetAPI(ctx contractapi.TransactionContextInterface, assetId string, name string, number string, status string, quantity int, weight int, timestamp string, updateBy string, newOwner string) (*QueryResultStatusMessage, error) {
+func (s *SmartContract) UpdateAssetAPI(ctx contractapi.TransactionContextInterface, assetId string, name string, number string, status string, quantity int, weight int, timestamp string, updateBy string, newOwner string) (*QueryResultAsset, error) {
 	return s.UpdateAsset(ctx, assetId, name, number, status, quantity, weight, timestamp, updateBy, newOwner, nil, nil)
 }
 

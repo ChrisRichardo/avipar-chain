@@ -232,7 +232,7 @@ app.get('/api/asset/detail/:asset_index', async function (req, res) {
             console.log(result.Message);
         } else{        
             console.log(result.Record);
-            res.status(200).json({response: result.Record});
+            res.status(200).json({response: [result.Record, result.RecordQty]});
             console.log(result.Message);
         }
         await networkObj.gateway.disconnect();
@@ -305,7 +305,7 @@ app.put('/api/purchaseorder/update/:order_index', async function (req, res) {
 
         var networkObj = await getNetwork(req.orgname, req.username);
 
-        var result = await networkObj.contract.submitTransaction('updatePurchaseOrderStatus', req.params.order_index, req.body.updateby, timestamp);
+        var result = await networkObj.contract.submitTransaction('updatePurchaseOrderStatus', req.params.order_index, req.body.updateby, timestamp, req.body.approve);
         
         var message;
         if(result.toString() == "false"){
@@ -365,7 +365,7 @@ app.put('/api/repairorder/update/:order_index', async function (req, res) {
 
         var networkObj = await getNetwork(req.orgname, req.username);
 
-        var result = await networkObj.contract.submitTransaction('updateRepairOrderStatus', req.params.order_index, req.body.updateby, timestamp);
+        var result = await networkObj.contract.submitTransaction('updateRepairOrderStatus', req.params.order_index, req.body.updateby, timestamp, req.body.approve);
         var message;
         if(result.toString() == "false"){
             message = "RO Update failed";
@@ -413,6 +413,32 @@ app.put('/api/asset/update/:asset_index', async function (req, res) {
 
         var networkObj = await getNetwork(req.orgname, req.username);
         var resultBuf = await networkObj.contract.submitTransaction('updateAssetAPI', req.params.asset_index, req.body.name, req.body.number, req.body.status, req.body.quantity, req.body.weight, timestamp, req.username, "");
+        var result= JSON.parse(resultBuf.toString())
+        if(result.Status == false){
+            res.status(400).json({response: result.Message});
+        } else{        
+            res.status(200).json({response: result.Message});
+        }
+        console.log(result.Message);
+        await networkObj.gateway.disconnect();
+} catch (error) {
+        console.error(`Failed to submit transaction: ${error}`);
+        process.exit(1);
+    } 
+})
+
+app.put('/api/asset/airline/update/:asset_index', async function (req, res) {
+    try {
+        var todayDateTime = new Date();   
+        var timestamp = [(todayDateTime.getMonth()+1).padLeft(),
+        todayDateTime.getDate().padLeft(),
+        todayDateTime.getFullYear()].join('/') +' ' +
+       [todayDateTime.getHours().padLeft(),
+        todayDateTime.getMinutes().padLeft(),
+        todayDateTime.getSeconds().padLeft()].join(':');
+
+        var networkObj = await getNetwork(req.orgname, req.username);
+        var resultBuf = await networkObj.contract.submitTransaction('updateAirlineAsset', req.params.asset_index, req.body.flightLog, req.body.nextOverhaul, req.body.totalHours, req.body.status, req.username, timestamp);
         var result= JSON.parse(resultBuf.toString())
         if(result.Status == false){
             res.status(400).json({response: result.Message});
@@ -535,20 +561,20 @@ app.get('/api/initdata', async function (req, res)  {
         for (var asset of assets){
             var timestamp = getTimestamp();
             console.log(asset);
-            await networkObj.contract.submitTransaction('createAssetAPI', asset[0], asset[1], asset[2], asset[3], asset[4], timestamp, "");
+            await networkObj.contract.submitTransaction('createAssetAPI', asset[0], asset[1], asset[2], asset[3], asset[4], timestamp, "", "");
         }
 
         var timestamp = getTimestamp();
         await networkObj.contract.submitTransaction('createPurchaseOrder', "ASSET1", "chris@gmail.com", 5, timestamp);
-        await networkObj.contract.submitTransaction('updatePurchaseOrderStatus', "PO1", "payo@gmail.com", timestamp);
+        await networkObj.contract.submitTransaction('updatePurchaseOrderStatus', "PO1", "payo@gmail.com", timestamp, true);
 
         var timestamp = getTimestamp();
         await networkObj.contract.submitTransaction('createPurchaseOrder', "ASSET3", "nadim@gmail.com", 5, timestamp);
-        await networkObj.contract.submitTransaction('updatePurchaseOrderStatus', "PO2", "chris@gmail.com", timestamp);
+        await networkObj.contract.submitTransaction('updatePurchaseOrderStatus', "PO2", "chris@gmail.com", timestamp, true);
 
         var timestamp = getTimestamp();
         await networkObj.contract.submitTransaction('createPurchaseOrder', "ASSET4", "christest@gmail.com", 2, timestamp);
-        await networkObj.contract.submitTransaction('updatePurchaseOrderStatus', "PO3", "nadim@gmail.com", timestamp);
+        await networkObj.contract.submitTransaction('updatePurchaseOrderStatus', "PO3", "nadim@gmail.com", timestamp, true);
         
         console.log("Init data success");
         res.status(200).json({response: "Init data success"});

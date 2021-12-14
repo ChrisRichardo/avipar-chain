@@ -11,13 +11,13 @@ networks:
 
 services:
 
-  ca_manufacturer:
+  ca_cirbus:
     image: hyperledger/fabric-ca:latest
     labels:
       service: hyperledger-fabric
     environment:
       - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
-      - FABRIC_CA_SERVER_CA_NAME=ca-orgManufacturer
+      - FABRIC_CA_SERVER_CA_NAME=ca-orgCirbus
       - FABRIC_CA_SERVER_TLS_ENABLED=true
       - FABRIC_CA_SERVER_PORT=6054
       - FABRIC_CA_SERVER_OPERATIONS_LISTENADDRESS=0.0.0.0:16054
@@ -26,18 +26,18 @@ services:
       - "16054:16054"
     command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
     volumes:
-      - ../organizations/fabric-ca/manufacturer:/etc/hyperledger/fabric-ca-server
-    container_name: ca_manufacturer
+      - ../organizations/fabric-ca/cirbus:/etc/hyperledger/fabric-ca-server
+    container_name: ca_cirbus
     networks:
       - avipar
 
-  ca_vendor:
+  ca_soeing:
     image: hyperledger/fabric-ca:latest
     labels:
       service: hyperledger-fabric
     environment:
       - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
-      - FABRIC_CA_SERVER_CA_NAME=ca-orgVendor
+      - FABRIC_CA_SERVER_CA_NAME=ca-orgSoeing
       - FABRIC_CA_SERVER_TLS_ENABLED=true
       - FABRIC_CA_SERVER_PORT=7054
       - FABRIC_CA_SERVER_OPERATIONS_LISTENADDRESS=0.0.0.0:17054
@@ -46,18 +46,18 @@ services:
       - "17054:17054"
     command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
     volumes:
-      - ../organizations/fabric-ca/vendor:/etc/hyperledger/fabric-ca-server
-    container_name: ca_vendor
+      - ../organizations/fabric-ca/soeing:/etc/hyperledger/fabric-ca-server
+    container_name: ca_soeing
     networks:
       - avipar
 
-  ca_airline:
+  ca_nataair:
     image: hyperledger/fabric-ca:latest
     labels:
       service: hyperledger-fabric
     environment:
       - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
-      - FABRIC_CA_SERVER_CA_NAME=ca-orgAirline
+      - FABRIC_CA_SERVER_CA_NAME=ca-orgNataAir
       - FABRIC_CA_SERVER_TLS_ENABLED=true
       - FABRIC_CA_SERVER_PORT=8054
       - FABRIC_CA_SERVER_OPERATIONS_LISTENADDRESS=0.0.0.0:18054
@@ -66,18 +66,18 @@ services:
       - "18054:18054"
     command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
     volumes:
-      - ../organizations/fabric-ca/airline:/etc/hyperledger/fabric-ca-server
-    container_name: ca_airline
+      - ../organizations/fabric-ca/nataair:/etc/hyperledger/fabric-ca-server
+    container_name: ca_nataair
     networks:
       - avipar
       
-  ca_mro:
+  ca_lycanairsa:
     image: hyperledger/fabric-ca:latest
     labels:
       service: hyperledger-fabric
     environment:
       - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
-      - FABRIC_CA_SERVER_CA_NAME=ca-orgMRO
+      - FABRIC_CA_SERVER_CA_NAME=ca-orgLycanAirSA
       - FABRIC_CA_SERVER_TLS_ENABLED=true
       - FABRIC_CA_SERVER_PORT=10054
       - FABRIC_CA_SERVER_OPERATIONS_LISTENADDRESS=0.0.0.0:11054
@@ -86,11 +86,91 @@ services:
       - "11054:11054"
     command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
     volumes:
-      - ../organizations/fabric-ca/mro:/etc/hyperledger/fabric-ca-server
-    container_name: ca_mro
+      - ../organizations/fabric-ca/lycanairsa:/etc/hyperledger/fabric-ca-server
+    container_name: ca_lycanairsa
     networks:
       - avipar
 
+  ca_cengkarengairwayengineering:
+    image: hyperledger/fabric-ca:latest
+    labels:
+      service: hyperledger-fabric
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca-orgCengkarengAirwayEngineering
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
+      - FABRIC_CA_SERVER_PORT=26054
+      - FABRIC_CA_SERVER_OPERATIONS_LISTENADDRESS=0.0.0.0:36054
+    ports:
+      - "26054:26054"
+      - "36054:36054"
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
+    volumes:
+      - ../organizations/fabric-ca/cengkarengairwayengineering:/etc/hyperledger/fabric-ca-server
+    container_name: ca_cengkarengairwayengineering
+    networks:
+      - avipar
+
+  ca_semco:
+    image: hyperledger/fabric-ca:latest
+    labels:
+      service: hyperledger-fabric
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca-orgSemco
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
+      - FABRIC_CA_SERVER_PORT=27054
+      - FABRIC_CA_SERVER_OPERATIONS_LISTENADDRESS=0.0.0.0:37054
+    ports:
+      - "27054:27054"
+      - "37054:37054"
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
+    volumes:
+      - ../organizations/fabric-ca/semco:/etc/hyperledger/fabric-ca-server
+    container_name: ca_semco
+    networks:
+      - avipar
+
+  ca_aviparairline:
+    image: hyperledger/fabric-ca:latest
+    labels:
+      service: hyperledger-fabric
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca-orgAviparAirline
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
+      - FABRIC_CA_SERVER_PORT=28054
+      - FABRIC_CA_SERVER_OPERATIONS_LISTENADDRESS=0.0.0.0:38054
+    ports:
+      - "28054:28054"
+      - "38054:38054"
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
+    volumes:
+      - ../organizations/fabric-ca/aviparairline:/etc/hyperledger/fabric-ca-server
+    container_name: ca_aviparairline
+    networks:
+      - avipar
+
+  ca_pamulangairway:
+    image: hyperledger/fabric-ca:latest
+    labels:
+      service: hyperledger-fabric
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca-orgPamulangAirway
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
+      - FABRIC_CA_SERVER_PORT=29054
+      - FABRIC_CA_SERVER_OPERATIONS_LISTENADDRESS=0.0.0.0:39054
+    ports:
+      - "29054:29054"
+      - "39054:39054"
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
+    volumes:
+      - ../organizations/fabric-ca/pamulangairway:/etc/hyperledger/fabric-ca-server
+    container_name: ca_pamulangairway
+    networks:
+      - avipar
+      
   ca_orderer:
     image: hyperledger/fabric-ca:latest
     labels:

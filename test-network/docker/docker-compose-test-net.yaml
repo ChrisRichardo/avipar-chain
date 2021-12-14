@@ -7,10 +7,14 @@ version: '3.7'
 
 volumes:
   orderer.example.com:
-  peer0.manufacturer.example.com:
-  peer0.vendor.example.com:
-  peer0.airline.example.com:
-  peer0.mro.example.com:
+  peer0.cirbus.example.com:
+  peer0.soeing.example.com:
+  peer0.nataair.example.com:
+  peer0.lycanairsa.example.com:
+  peer0.cengkarengairwayengineering.example.com:
+  peer0.semco.example.com:
+  peer0.aviparairline.example.com:
+  peer0.pamulangairway.example.com:
 
 networks:
   avipar:
@@ -60,8 +64,8 @@ services:
     networks:
       - avipar
 
-  peer0.manufacturer.example.com:
-    container_name: peer0.manufacturer.example.com
+  peer0.cirbus.example.com:
+    container_name: peer0.cirbus.example.com
     image: hyperledger/fabric-peer:latest
     labels:
       service: hyperledger-fabric
@@ -77,20 +81,20 @@ services:
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
       - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
       # Peer specific variables
-      - CORE_PEER_ID=peer0.manufacturer.example.com
-      - CORE_PEER_ADDRESS=peer0.manufacturer.example.com:6051
+      - CORE_PEER_ID=peer0.cirbus.example.com
+      - CORE_PEER_ADDRESS=peer0.cirbus.example.com:6051
       - CORE_PEER_LISTENADDRESS=0.0.0.0:6051
-      - CORE_PEER_CHAINCODEADDRESS=peer0.manufacturer.example.com:6052
+      - CORE_PEER_CHAINCODEADDRESS=peer0.cirbus.example.com:6052
       - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:6052
-      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.manufacturer.example.com:6051
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.manufacturer.example.com:6051
-      - CORE_PEER_LOCALMSPID=ManufacturerMSP
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.cirbus.example.com:6051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.cirbus.example.com:6051
+      - CORE_PEER_LOCALMSPID=CirbusMSP
       - CORE_OPERATIONS_LISTENADDRESS=0.0.0.0:16051
     volumes:
         - ${DOCKER_SOCK}:/host/var/run/docker.sock
-        - ../organizations/peerOrganizations/manufacturer.example.com/peers/peer0.manufacturer.example.com/msp:/etc/hyperledger/fabric/msp
-        - ../organizations/peerOrganizations/manufacturer.example.com/peers/peer0.manufacturer.example.com/tls:/etc/hyperledger/fabric/tls
-        - peer0.manufacturer.example.com:/var/hyperledger/production
+        - ../organizations/peerOrganizations/cirbus.example.com/peers/peer0.cirbus.example.com/msp:/etc/hyperledger/fabric/msp
+        - ../organizations/peerOrganizations/cirbus.example.com/peers/peer0.cirbus.example.com/tls:/etc/hyperledger/fabric/tls
+        - peer0.cirbus.example.com:/var/hyperledger/production
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
     command: peer node start
     ports:
@@ -99,8 +103,8 @@ services:
     networks:
       - avipar
 
-  peer0.vendor.example.com:
-    container_name: peer0.vendor.example.com
+  peer0.soeing.example.com:
+    container_name: peer0.soeing.example.com
     image: hyperledger/fabric-peer:latest
     labels:
       service: hyperledger-fabric
@@ -116,20 +120,20 @@ services:
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
       - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
       # Peer specific variables
-      - CORE_PEER_ID=peer0.vendor.example.com
-      - CORE_PEER_ADDRESS=peer0.vendor.example.com:7051
+      - CORE_PEER_ID=peer0.soeing.example.com
+      - CORE_PEER_ADDRESS=peer0.soeing.example.com:7051
       - CORE_PEER_LISTENADDRESS=0.0.0.0:7051
-      - CORE_PEER_CHAINCODEADDRESS=peer0.vendor.example.com:7052
+      - CORE_PEER_CHAINCODEADDRESS=peer0.soeing.example.com:7052
       - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:7052
-      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.vendor.example.com:7051
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.vendor.example.com:7051
-      - CORE_PEER_LOCALMSPID=VendorMSP
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.soeing.example.com:7051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.soeing.example.com:7051
+      - CORE_PEER_LOCALMSPID=SoeingMSP
       - CORE_OPERATIONS_LISTENADDRESS=0.0.0.0:17051
     volumes:
         - ${DOCKER_SOCK}:/host/var/run/docker.sock
-        - ../organizations/peerOrganizations/vendor.example.com/peers/peer0.vendor.example.com/msp:/etc/hyperledger/fabric/msp
-        - ../organizations/peerOrganizations/vendor.example.com/peers/peer0.vendor.example.com/tls:/etc/hyperledger/fabric/tls
-        - peer0.vendor.example.com:/var/hyperledger/production
+        - ../organizations/peerOrganizations/soeing.example.com/peers/peer0.soeing.example.com/msp:/etc/hyperledger/fabric/msp
+        - ../organizations/peerOrganizations/soeing.example.com/peers/peer0.soeing.example.com/tls:/etc/hyperledger/fabric/tls
+        - peer0.soeing.example.com:/var/hyperledger/production
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
     command: peer node start
     ports:
@@ -138,8 +142,8 @@ services:
     networks:
       - avipar
 
-  peer0.airline.example.com:
-    container_name: peer0.airline.example.com
+  peer0.nataair.example.com:
+    container_name: peer0.nataair.example.com
     image: hyperledger/fabric-peer:latest
     labels:
       service: hyperledger-fabric
@@ -155,20 +159,20 @@ services:
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
       - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
       # Peer specific variables
-      - CORE_PEER_ID=peer0.airline.example.com
-      - CORE_PEER_ADDRESS=peer0.airline.example.com:8051
+      - CORE_PEER_ID=peer0.nataair.example.com
+      - CORE_PEER_ADDRESS=peer0.nataair.example.com:8051
       - CORE_PEER_LISTENADDRESS=0.0.0.0:8051
-      - CORE_PEER_CHAINCODEADDRESS=peer0.airline.example.com:8052
+      - CORE_PEER_CHAINCODEADDRESS=peer0.nataair.example.com:8052
       - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:8052
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.airline.example.com:8051
-      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.airline.example.com:8051
-      - CORE_PEER_LOCALMSPID=AirlineMSP
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.nataair.example.com:8051
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.nataair.example.com:8051
+      - CORE_PEER_LOCALMSPID=NataAirMSP
       - CORE_OPERATIONS_LISTENADDRESS=0.0.0.0:18051
     volumes:
         - ${DOCKER_SOCK}:/host/var/run/docker.sock
-        - ../organizations/peerOrganizations/airline.example.com/peers/peer0.airline.example.com/msp:/etc/hyperledger/fabric/msp
-        - ../organizations/peerOrganizations/airline.example.com/peers/peer0.airline.example.com/tls:/etc/hyperledger/fabric/tls
-        - peer0.airline.example.com:/var/hyperledger/production
+        - ../organizations/peerOrganizations/nataair.example.com/peers/peer0.nataair.example.com/msp:/etc/hyperledger/fabric/msp
+        - ../organizations/peerOrganizations/nataair.example.com/peers/peer0.nataair.example.com/tls:/etc/hyperledger/fabric/tls
+        - peer0.nataair.example.com:/var/hyperledger/production
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
     command: peer node start
     ports:
@@ -177,8 +181,8 @@ services:
     networks:
       - avipar
   
-  peer0.mro.example.com:
-    container_name: peer0.mro.example.com
+  peer0.lycanairsa.example.com:
+    container_name: peer0.lycanairsa.example.com
     image: hyperledger/fabric-peer:latest
     labels:
       service: hyperledger-fabric
@@ -194,25 +198,181 @@ services:
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
       - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
       # Peer specific variables
-      - CORE_PEER_ID=peer0.mro.example.com
-      - CORE_PEER_ADDRESS=peer0.mro.example.com:10051
+      - CORE_PEER_ID=peer0.lycanairsa.example.com
+      - CORE_PEER_ADDRESS=peer0.lycanairsa.example.com:10051
       - CORE_PEER_LISTENADDRESS=0.0.0.0:10051
-      - CORE_PEER_CHAINCODEADDRESS=peer0.mro.example.com:10052
+      - CORE_PEER_CHAINCODEADDRESS=peer0.lycanairsa.example.com:10052
       - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:10052
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.mro.example.com:10051
-      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.mro.example.com:10051
-      - CORE_PEER_LOCALMSPID=MROMSP
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.lycanairsa.example.com:10051
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.lycanairsa.example.com:10051
+      - CORE_PEER_LOCALMSPID=LycanAirSAMSP
       - CORE_OPERATIONS_LISTENADDRESS=0.0.0.0:11051
     volumes:
         - ${DOCKER_SOCK}:/host/var/run/docker.sock
-        - ../organizations/peerOrganizations/mro.example.com/peers/peer0.mro.example.com/msp:/etc/hyperledger/fabric/msp
-        - ../organizations/peerOrganizations/mro.example.com/peers/peer0.mro.example.com/tls:/etc/hyperledger/fabric/tls
-        - peer0.mro.example.com:/var/hyperledger/production
+        - ../organizations/peerOrganizations/lycanairsa.example.com/peers/peer0.lycanairsa.example.com/msp:/etc/hyperledger/fabric/msp
+        - ../organizations/peerOrganizations/lycanairsa.example.com/peers/peer0.lycanairsa.example.com/tls:/etc/hyperledger/fabric/tls
+        - peer0.lycanairsa.example.com:/var/hyperledger/production
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
     command: peer node start
     ports:
       - 10051:10051
       - 11051:11051
+    networks:
+      - avipar
+
+  peer0.cengkarengairwayengineering.example.com:
+    container_name: peer0.cengkarengairwayengineering.example.com
+    image: hyperledger/fabric-peer:latest
+    labels:
+      service: hyperledger-fabric
+    environment:
+      #Generic peer variables
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=avipar_chain
+      - FABRIC_LOGGING_SPEC=INFO
+      #- FABRIC_LOGGING_SPEC=DEBUG
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_PROFILE_ENABLED=false
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      # Peer specific variables
+      - CORE_PEER_ID=peer0.cengkarengairwayengineering.example.com
+      - CORE_PEER_ADDRESS=peer0.cengkarengairwayengineering.example.com:26051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:26051
+      - CORE_PEER_CHAINCODEADDRESS=peer0.cengkarengairwayengineering.example.com:26052
+      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:26052
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.cengkarengairwayengineering.example.com:26051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.cengkarengairwayengineering.example.com:26051
+      - CORE_PEER_LOCALMSPID=CengkarengAirwayEngineeringMSP
+      - CORE_OPERATIONS_LISTENADDRESS=0.0.0.0:36051
+    volumes:
+        - ${DOCKER_SOCK}:/host/var/run/docker.sock
+        - ../organizations/peerOrganizations/cengkarengairwayengineering.example.com/peers/peer0.cengkarengairwayengineering.example.com/msp:/etc/hyperledger/fabric/msp
+        - ../organizations/peerOrganizations/cengkarengairwayengineering.example.com/peers/peer0.cengkarengairwayengineering.example.com/tls:/etc/hyperledger/fabric/tls
+        - peer0.cengkarengairwayengineering.example.com:/var/hyperledger/production
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+    command: peer node start
+    ports:
+      - 26051:26051
+      - 36051:36051
+    networks:
+      - avipar
+
+  peer0.semco.example.com:
+    container_name: peer0.semco.example.com
+    image: hyperledger/fabric-peer:latest
+    labels:
+      service: hyperledger-fabric
+    environment:
+      #Generic peer variables
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=avipar_chain
+      - FABRIC_LOGGING_SPEC=INFO
+      #- FABRIC_LOGGING_SPEC=DEBUG
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_PROFILE_ENABLED=false
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      # Peer specific variables
+      - CORE_PEER_ID=peer0.semco.example.com
+      - CORE_PEER_ADDRESS=peer0.semco.example.com:27051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:27051
+      - CORE_PEER_CHAINCODEADDRESS=peer0.semco.example.com:27052
+      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:27052
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.semco.example.com:27051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.semco.example.com:27051
+      - CORE_PEER_LOCALMSPID=SemcoMSP
+      - CORE_OPERATIONS_LISTENADDRESS=0.0.0.0:37051
+    volumes:
+        - ${DOCKER_SOCK}:/host/var/run/docker.sock
+        - ../organizations/peerOrganizations/semco.example.com/peers/peer0.semco.example.com/msp:/etc/hyperledger/fabric/msp
+        - ../organizations/peerOrganizations/semco.example.com/peers/peer0.semco.example.com/tls:/etc/hyperledger/fabric/tls
+        - peer0.semco.example.com:/var/hyperledger/production
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+    command: peer node start
+    ports:
+      - 27051:27051
+      - 37051:37051
+    networks:
+      - avipar
+
+  peer0.aviparairline.example.com:
+    container_name: peer0.aviparairline.example.com
+    image: hyperledger/fabric-peer:latest
+    labels:
+      service: hyperledger-fabric
+    environment:
+      #Generic peer variables
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=avipar_chain
+      - FABRIC_LOGGING_SPEC=INFO
+      #- FABRIC_LOGGING_SPEC=DEBUG
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_PROFILE_ENABLED=false
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      # Peer specific variables
+      - CORE_PEER_ID=peer0.aviparairline.example.com
+      - CORE_PEER_ADDRESS=peer0.aviparairline.example.com:28051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:28051
+      - CORE_PEER_CHAINCODEADDRESS=peer0.aviparairline.example.com:28052
+      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:28052
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.aviparairline.example.com:28051
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.aviparairline.example.com:28051
+      - CORE_PEER_LOCALMSPID=AviparAirlineMSP
+      - CORE_OPERATIONS_LISTENADDRESS=0.0.0.0:38051
+    volumes:
+        - ${DOCKER_SOCK}:/host/var/run/docker.sock
+        - ../organizations/peerOrganizations/aviparairline.example.com/peers/peer0.aviparairline.example.com/msp:/etc/hyperledger/fabric/msp
+        - ../organizations/peerOrganizations/aviparairline.example.com/peers/peer0.aviparairline.example.com/tls:/etc/hyperledger/fabric/tls
+        - peer0.aviparairline.example.com:/var/hyperledger/production
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+    command: peer node start
+    ports:
+      - 28051:28051
+      - 38051:38051
+    networks:
+      - avipar
+  
+  peer0.pamulangairway.example.com:
+    container_name: peer0.pamulangairway.example.com
+    image: hyperledger/fabric-peer:latest
+    labels:
+      service: hyperledger-fabric
+    environment:
+      #Generic peer variables
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=avipar_chain
+      - FABRIC_LOGGING_SPEC=INFO
+      #- FABRIC_LOGGING_SPEC=DEBUG
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_PROFILE_ENABLED=false
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      # Peer specific variables
+      - CORE_PEER_ID=peer0.pamulangairway.example.com
+      - CORE_PEER_ADDRESS=peer0.pamulangairway.example.com:29051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:29051
+      - CORE_PEER_CHAINCODEADDRESS=peer0.pamulangairway.example.com:29052
+      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:29052
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.pamulangairway.example.com:29051
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.pamulangairway.example.com:29051
+      - CORE_PEER_LOCALMSPID=PamulangAirwayMSP
+      - CORE_OPERATIONS_LISTENADDRESS=0.0.0.0:39051
+    volumes:
+        - ${DOCKER_SOCK}:/host/var/run/docker.sock
+        - ../organizations/peerOrganizations/pamulangairway.example.com/peers/peer0.pamulangairway.example.com/msp:/etc/hyperledger/fabric/msp
+        - ../organizations/peerOrganizations/pamulangairway.example.com/peers/peer0.pamulangairway.example.com/tls:/etc/hyperledger/fabric/tls
+        - peer0.pamulangairway.example.com:/var/hyperledger/production
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+    command: peer node start
+    ports:
+      - 29051:29051
+      - 39051:39051
     networks:
       - avipar
 
@@ -234,9 +394,13 @@ services:
         - ../organizations:/opt/gopath/src/github.com/hyperledger/fabric/peer/organizations
         - ../scripts:/opt/gopath/src/github.com/hyperledger/fabric/peer/scripts/
     depends_on:
-      - peer0.manufacturer.example.com
-      - peer0.vendor.example.com
-      - peer0.airline.example.com
-      - peer0.mro.example.com
+      - peer0.cirbus.example.com
+      - peer0.soeing.example.com
+      - peer0.nataair.example.com
+      - peer0.lycanairsa.example.com
+      - peer0.cengkarengairwayengineering.example.com
+      - peer0.semco.example.com
+      - peer0.aviparairline.example.com
+      - peer0.pamulangairway.example.com
     networks:
       - avipar

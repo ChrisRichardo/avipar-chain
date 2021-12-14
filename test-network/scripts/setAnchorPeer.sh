@@ -17,18 +17,30 @@ createAnchorPeerUpdate() {
 
   infoln "Generating anchor peer update transaction for Org${ORG} on channel $CHANNEL_NAME"
 
-  if [ "$ORG" == "Manufacturer" ]; then
-    HOST="peer0.manufacturer.example.com"
+  if [ "$ORG" == "Cirbus" ]; then
+    HOST="peer0.cirbus.example.com"
     PORT=6051
-  elif [ "$ORG" == "Vendor" ]; then
-    HOST="peer0.vendor.example.com"
+  elif [ "$ORG" == "Soeing" ]; then
+    HOST="peer0.soeing.example.com"
     PORT=7051
-  elif [ "$ORG" == "Airline" ]; then
-    HOST="peer0.airline.example.com"
+  elif [ "$ORG" == "NataAir" ]; then
+    HOST="peer0.nataair.example.com"
     PORT=8051
-  elif [ "$ORG" == "MRO" ]; then
-    HOST="peer0.mro.example.com"
+  elif [ "$ORG" == "LycanAirSA" ]; then
+    HOST="peer0.lycanairsa.example.com"
     PORT=10051
+  elif [ "$ORG" == "CengkarengAirwayEngineering" ]; then
+    HOST="peer0.cengkarengairwayengineering.example.com"
+    PORT=26051
+  elif [ "$ORG" == "Semco" ]; then
+    HOST="peer0.semco.example.com"
+    PORT=27051
+  elif [ "$ORG" == "AviparAirline" ]; then
+    HOST="peer0.aviparairline.example.com"
+    PORT=28051
+  elif [ "$ORG" == "PamulangAirway" ]; then
+    HOST="peer0.pamulangairway.example.com"
+    PORT=29051
   else
     errorln "Org${ORG} unknown"
   fi

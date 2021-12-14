@@ -23,14 +23,14 @@ createChannelGenesisBlock() {
 		fatalln "configtxgen tool not found."
 	fi
 	set -x
-	configtxgen -profile FourOrgsApplicationGenesis -outputBlock ./channel-artifacts/${CHANNEL_NAME}.block -channelID $CHANNEL_NAME
+	configtxgen -profile EightOrgsApplicationGenesis -outputBlock ./channel-artifacts/${CHANNEL_NAME}.block -channelID $CHANNEL_NAME
 	res=$?
 	{ set +x; } 2>/dev/null
   verifyResult $res "Failed to generate channel configuration transaction..."
 }
 
 createChannel() {
-	setGlobals Manufacturer
+	setGlobals Cirbus
 	# Poll in case the raft leader is not set yet
 	local rc=1
 	local COUNTER=1
@@ -89,23 +89,39 @@ createChannel
 successln "Channel '$CHANNEL_NAME' created"
 
 ## Join all the peers to the channel
-infoln "Joining Manufacturer peer to the channel..."
-joinChannel Manufacturer
-infoln "Joining Vendor peer to the channel..."
-joinChannel Vendor
-infoln "Joining Airline peer to the channel..."
-joinChannel Airline
-infoln "Joining MRO peer to the channel..."
-joinChannel MRO
+infoln "Joining Cirbus peer to the channel..."
+joinChannel Cirbus
+infoln "Joining Soeing peer to the channel..."
+joinChannel Soeing
+infoln "Joining NataAir peer to the channel..."
+joinChannel NataAir
+infoln "Joining LycanAirSA peer to the channel..."
+joinChannel LycanAirSA
+infoln "Joining CengkarengAirwayEngineering peer to the channel..."
+joinChannel CengkarengAirwayEngineering
+infoln "Joining Semco peer to the channel..."
+joinChannel Semco
+infoln "Joining AviparAirline peer to the channel..."
+joinChannel AviparAirline
+infoln "Joining PamulangAirway peer to the channel..."
+joinChannel PamulangAirway
 
 ## Set the anchor peers for each org in the channel
-infoln "Setting anchor peer for Manufacturer..."
-setAnchorPeer Manufacturer
-infoln "Setting anchor peer for Vendor..."
-setAnchorPeer Vendor
-infoln "Setting anchor peer for Supplier..."
-setAnchorPeer Airline
-infoln "Setting anchor peer for MRO..."
-setAnchorPeer MRO
+infoln "Setting anchor peer for Cirbus..."
+setAnchorPeer Cirbus
+infoln "Setting anchor peer for Soeing..."
+setAnchorPeer Soeing
+infoln "Setting anchor peer for NataAir..."
+setAnchorPeer NataAir
+infoln "Setting anchor peer for LycanAirSA..."
+setAnchorPeer LycanAirSA
+infoln "Setting anchor peer for CengkarengAirwayEngineering..."
+setAnchorPeer CengkarengAirwayEngineering
+infoln "Setting anchor peer for Semco..."
+setAnchorPeer Semco
+infoln "Setting anchor peer for AviparAirline..."
+setAnchorPeer AviparAirline
+infoln "Setting anchor peer for PamulangAirway..."
+setAnchorPeer PamulangAirway
 
 successln "Channel '$CHANNEL_NAME' joined"

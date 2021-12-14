@@ -44,15 +44,15 @@ Organizations:
         OrdererEndpoints:
             - orderer.example.com:6050
 
-    - &Manufacturer
+    - &Cirbus
         # DefaultOrg defines the organization which is used in the sampleconfig
         # of the fabric.git development environment
-        Name: ManufacturerMSP
+        Name: CirbusMSP
 
         # ID to load the MSP definition as
-        ID: ManufacturerMSP
+        ID: CirbusMSP
 
-        MSPDir: ../organizations/peerOrganizations/manufacturer.example.com/msp
+        MSPDir: ../organizations/peerOrganizations/cirbus.example.com/msp
 
         # Policies defines the set of policies at this level of the config tree
         # For organization policies, their canonical path is usually
@@ -60,26 +60,26 @@ Organizations:
         Policies:
             Readers:
                 Type: Signature
-                Rule: "OR('ManufacturerMSP.admin', 'ManufacturerMSP.peer', 'ManufacturerMSP.client')"
+                Rule: "OR('CirbusMSP.admin', 'CirbusMSP.peer', 'CirbusMSP.client')"
             Writers:
                 Type: Signature
-                Rule: "OR('ManufacturerMSP.admin', 'ManufacturerMSP.client')"
+                Rule: "OR('CirbusMSP.admin', 'CirbusMSP.client')"
             Admins:
                 Type: Signature
-                Rule: "OR('ManufacturerMSP.admin')"
+                Rule: "OR('CirbusMSP.admin')"
             Endorsement:
                 Type: Signature
-                Rule: "OR('ManufacturerMSP.peer')"
+                Rule: "OR('CirbusMSP.peer')"
 
-    - &Vendor
+    - &Soeing
         # DefaultOrg defines the organization which is used in the sampleconfig
         # of the fabric.git development environment
-        Name: VendorMSP
+        Name: SoeingMSP
 
         # ID to load the MSP definition as
-        ID: VendorMSP
+        ID: SoeingMSP
 
-        MSPDir: ../organizations/peerOrganizations/vendor.example.com/msp
+        MSPDir: ../organizations/peerOrganizations/Soeing.example.com/msp
 
         # Policies defines the set of policies at this level of the config tree
         # For organization policies, their canonical path is usually
@@ -87,26 +87,26 @@ Organizations:
         Policies:
             Readers:
                 Type: Signature
-                Rule: "OR('VendorMSP.admin', 'VendorMSP.peer', 'VendorMSP.client')"
+                Rule: "OR('SoeingMSP.admin', 'SoeingMSP.peer', 'SoeingMSP.client')"
             Writers:
                 Type: Signature
-                Rule: "OR('VendorMSP.admin', 'VendorMSP.client')"
+                Rule: "OR('SoeingMSP.admin', 'SoeingMSP.client')"
             Admins:
                 Type: Signature
-                Rule: "OR('VendorMSP.admin')"
+                Rule: "OR('SoeingMSP.admin')"
             Endorsement:
                 Type: Signature
-                Rule: "OR('VendorMSP.peer')"
+                Rule: "OR('SoeingMSP.peer')"
     
-    - &Airline
+    - &NataAir
         # DefaultOrg defines the organization which is used in the sampleconfig
         # of the fabric.git development environment
-        Name: AirlineMSP
+        Name: NataAirMSP
 
         # ID to load the MSP definition as
-        ID: AirlineMSP
+        ID: NataAirMSP
 
-        MSPDir: ../organizations/peerOrganizations/airline.example.com/msp
+        MSPDir: ../organizations/peerOrganizations/nataair.example.com/msp
 
         # Policies defines the set of policies at this level of the config tree
         # For organization policies, their canonical path is usually
@@ -114,26 +114,26 @@ Organizations:
         Policies:
             Readers:
                 Type: Signature
-                Rule: "OR('AirlineMSP.admin', 'AirlineMSP.peer', 'AirlineMSP.client')"
+                Rule: "OR('NataAirMSP.admin', 'NataAirMSP.peer', 'NataAirMSP.client')"
             Writers:
                 Type: Signature
-                Rule: "OR('AirlineMSP.admin', 'AirlineMSP.client')"
+                Rule: "OR('NataAirMSP.admin', 'NataAirMSP.client')"
             Admins:
                 Type: Signature
-                Rule: "OR('AirlineMSP.admin')"
+                Rule: "OR('NataAirMSP.admin')"
             Endorsement:
                 Type: Signature
-                Rule: "OR('AirlineMSP.peer')"
+                Rule: "OR('NataAirMSP.peer')"
 
-    - &MRO
+    - &LycanAirSA
         # DefaultOrg defines the organization which is used in the sampleconfig
         # of the fabric.git development environment
-        Name: MROMSP
+        Name: LycanAirSAMSP
 
         # ID to load the MSP definition as
-        ID: MROMSP
+        ID: LycanAirSAMSP
 
-        MSPDir: ../organizations/peerOrganizations/mro.example.com/msp
+        MSPDir: ../organizations/peerOrganizations/lycanairsa.example.com/msp
 
         # Policies defines the set of policies at this level of the config tree
         # For organization policies, their canonical path is usually
@@ -141,17 +141,125 @@ Organizations:
         Policies:
             Readers:
                 Type: Signature
-                Rule: "OR('MROMSP.admin', 'MROMSP.peer', 'MROMSP.client')"
+                Rule: "OR('LycanAirSAMSP.admin', 'LycanAirSAMSP.peer', 'LycanAirSAMSP.client')"
             Writers:
                 Type: Signature
-                Rule: "OR('MROMSP.admin', 'MROMSP.client')"
+                Rule: "OR('LycanAirSAMSP.admin', 'LycanAirSAMSP.client')"
             Admins:
                 Type: Signature
-                Rule: "OR('MROMSP.admin')"
+                Rule: "OR('LycanAirSAMSP.admin')"
             Endorsement:
                 Type: Signature
-                Rule: "OR('MROMSP.peer')"
+                Rule: "OR('LycanAirSAMSP.peer')"
 
+    
+    - &CengkarengAirwayEngineering
+        # DefaultOrg defines the organization which is used in the sampleconfig
+        # of the fabric.git development environment
+        Name: CengkarengAirwayEngineeringMSP
+
+        # ID to load the MSP definition as
+        ID: CengkarengAirwayEngineeringMSP
+
+        MSPDir: ../organizations/peerOrganizations/cengkarengairwayengineering.example.com/msp
+
+        # Policies defines the set of policies at this level of the config tree
+        # For organization policies, their canonical path is usually
+        #   /Channel/<Application|Orderer>/<OrgName>/<PolicyName>
+        Policies:
+            Readers:
+                Type: Signature
+                Rule: "OR('CengkarengAirwayEngineeringMSP.admin', 'CengkarengAirwayEngineeringMSP.peer', 'CengkarengAirwayEngineeringMSP.client')"
+            Writers:
+                Type: Signature
+                Rule: "OR('CengkarengAirwayEngineeringMSP.admin', 'CengkarengAirwayEngineeringMSP.client')"
+            Admins:
+                Type: Signature
+                Rule: "OR('CengkarengAirwayEngineeringMSP.admin')"
+            Endorsement:
+                Type: Signature
+                Rule: "OR('CengkarengAirwayEngineeringMSP.peer')"
+    
+    - &Semco
+        # DefaultOrg defines the organization which is used in the sampleconfig
+        # of the fabric.git development environment
+        Name: SemcoMSP
+
+        # ID to load the MSP definition as
+        ID: SemcoMSP
+
+        MSPDir: ../organizations/peerOrganizations/semco.example.com/msp
+
+        # Policies defines the set of policies at this level of the config tree
+        # For organization policies, their canonical path is usually
+        #   /Channel/<Application|Orderer>/<OrgName>/<PolicyName>
+        Policies:
+            Readers:
+                Type: Signature
+                Rule: "OR('SemcoMSP.admin', 'SemcoMSP.peer', 'SemcoMSP.client')"
+            Writers:
+                Type: Signature
+                Rule: "OR('SemcoMSP.admin', 'SemcoMSP.client')"
+            Admins:
+                Type: Signature
+                Rule: "OR('SemcoMSP.admin')"
+            Endorsement:
+                Type: Signature
+                Rule: "OR('SemcoMSP.peer')"
+
+    - &AviparAirline
+        # DefaultOrg defines the organization which is used in the sampleconfig
+        # of the fabric.git development environment
+        Name: AviparAirlineMSP
+
+        # ID to load the MSP definition as
+        ID: AviparAirlineMSP
+
+        MSPDir: ../organizations/peerOrganizations/aviparairline.example.com/msp
+
+        # Policies defines the set of policies at this level of the config tree
+        # For organization policies, their canonical path is usually
+        #   /Channel/<Application|Orderer>/<OrgName>/<PolicyName>
+        Policies:
+            Readers:
+                Type: Signature
+                Rule: "OR('AviparAirlineMSP.admin', 'AviparAirlineMSP.peer', 'AviparAirlineMSP.client')"
+            Writers:
+                Type: Signature
+                Rule: "OR('AviparAirlineMSP.admin', 'AviparAirlineMSP.client')"
+            Admins:
+                Type: Signature
+                Rule: "OR('AviparAirlineMSP.admin')"
+            Endorsement:
+                Type: Signature
+                Rule: "OR('AviparAirlineMSP.peer')"
+
+    - &PamulangAirway
+        # DefaultOrg defines the organization which is used in the sampleconfig
+        # of the fabric.git development environment
+        Name: PamulangAirwayMSP
+
+        # ID to load the MSP definition as
+        ID: PamulangAirwayMSP
+
+        MSPDir: ../organizations/peerOrganizations/pamulangairway.example.com/msp
+
+        # Policies defines the set of policies at this level of the config tree
+        # For organization policies, their canonical path is usually
+        #   /Channel/<Application|Orderer>/<OrgName>/<PolicyName>
+        Policies:
+            Readers:
+                Type: Signature
+                Rule: "OR('PamulangAirwayMSP.admin', 'PamulangAirwayMSP.peer', 'PamulangAirwayMSP.client')"
+            Writers:
+                Type: Signature
+                Rule: "OR('PamulangAirwayMSP.admin', 'PamulangAirwayMSP.client')"
+            Admins:
+                Type: Signature
+                Rule: "OR('PamulangAirwayMSP.admin')"
+            Endorsement:
+                Type: Signature
+                Rule: "OR('PamulangAirwayMSP.peer')"
 ################################################################################
 #
 #   SECTION: Capabilities
@@ -354,7 +462,7 @@ Channel: &ChannelDefaults
 ################################################################################
 Profiles:
 
-    FourOrgsApplicationGenesis:
+    EightOrgsApplicationGenesis:
         <<: *ChannelDefaults
         Orderer:
             <<: *OrdererDefaults
@@ -364,8 +472,12 @@ Profiles:
         Application:
             <<: *ApplicationDefaults
             Organizations:
-                - *Manufacturer
-                - *Vendor
-                - *Airline
-                - *MRO
+                - *Cirbus
+                - *Soeing
+                - *NataAir
+                - *LycanAirSA
+                - *CengkarengAirwayEngineering
+                - *Semco
+                - *AviparAirline
+                - *PamulangAirway
             Capabilities: *ApplicationCapabilities

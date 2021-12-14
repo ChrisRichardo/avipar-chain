@@ -135,40 +135,78 @@ function createOrgs() {
     fi
     infoln "Generating certificates using cryptogen tool"
 
-    infoln "Creating Manufacturer Identities"
+    infoln "Creating Cirbus Identities"
 
     set -x
-    cryptogen generate --config=./organizations/cryptogen/crypto-config-manufacturer.yaml --output="organizations"
+    cryptogen generate --config=./organizations/cryptogen/crypto-config-cirbus.yaml --output="organizations"
     res=$?
     { set +x; } 2>/dev/null
     if [ $res -ne 0 ]; then
       fatalln "Failed to generate certificates..."
     fi
 
-    infoln "Creating Vendor Identities"
+    infoln "Creating Soeing Identities"
 
     set -x
-    cryptogen generate --config=./organizations/cryptogen/crypto-config-vendor.yaml --output="organizations"
+    cryptogen generate --config=./organizations/cryptogen/crypto-config-soeing.yaml --output="organizations"
     res=$?
     { set +x; } 2>/dev/null
     if [ $res -ne 0 ]; then
       fatalln "Failed to generate certificates..."
     fi
 
-    infoln "Creating Airline Identities"
+    infoln "Creating NataAir Identities"
 
     set -x
-    cryptogen generate --config=./organizations/cryptogen/crypto-config-airline.yaml --output="organizations"
+    cryptogen generate --config=./organizations/cryptogen/crypto-config-nataair.yaml --output="organizations"
     res=$?
     { set +x; } 2>/dev/null
     if [ $res -ne 0 ]; then
       fatalln "Failed to generate certificates..."
     fi
 
-    infoln "Creating MRO Identities"
+    infoln "Creating LycanAirSA Identities"
 
     set -x
-    cryptogen generate --config=./organizations/cryptogen/crypto-config-mro.yaml --output="organizations"
+    cryptogen generate --config=./organizations/cryptogen/crypto-config-lycanairsa.yaml --output="organizations"
+    res=$?
+    { set +x; } 2>/dev/null
+    if [ $res -ne 0 ]; then
+      fatalln "Failed to generate certificates..."
+    fi
+
+    set -x
+    cryptogen generate --config=./organizations/cryptogen/crypto-config-cengkarengairwayengineering.yaml --output="organizations"
+    res=$?
+    { set +x; } 2>/dev/null
+    if [ $res -ne 0 ]; then
+      fatalln "Failed to generate certificates..."
+    fi
+
+    infoln "Creating Semco Identities"
+
+    set -x
+    cryptogen generate --config=./organizations/cryptogen/crypto-config-semco.yaml --output="organizations"
+    res=$?
+    { set +x; } 2>/dev/null
+    if [ $res -ne 0 ]; then
+      fatalln "Failed to generate certificates..."
+    fi
+
+    infoln "Creating AviparAirline Identities"
+
+    set -x
+    cryptogen generate --config=./organizations/cryptogen/crypto-config-aviparairline.yaml --output="organizations"
+    res=$?
+    { set +x; } 2>/dev/null
+    if [ $res -ne 0 ]; then
+      fatalln "Failed to generate certificates..."
+    fi
+
+    infoln "Creating PamulangAirway Identities"
+
+    set -x
+    cryptogen generate --config=./organizations/cryptogen/crypto-config-pamulangairway.yaml --output="organizations"
     res=$?
     { set +x; } 2>/dev/null
     if [ $res -ne 0 ]; then
@@ -196,28 +234,44 @@ function createOrgs() {
 
   while :
     do
-      if [ ! -f "organizations/fabric-ca/manufacturer/tls-cert.pem" ]; then
+      if [ ! -f "organizations/fabric-ca/cirbus/tls-cert.pem" ]; then
         sleep 1
       else
         break
       fi
     done
 
-    infoln "Creating Manufacturer Identities"
+    infoln "Creating Cirbus Identities"
 
-    createManufacturer
+    createCirbus
 
-    infoln "Creating Vendor Identities"
+    infoln "Creating Soeing Identities"
 
-    createVendor
+    createSoeing
 
-    infoln "Creating Airline Identities"
+    infoln "Creating NataAir Identities"
 
-    createAirline
+    createNataAir
 
-    infoln "Creating MRO Identities"
+    infoln "Creating LycanAirSA Identities"
 
-    createMRO
+    createLycanAirSA
+
+    infoln "Creating CengkarengAirwayEngineering Identities"
+
+    createCengkarengAirwayEngineering
+
+    infoln "Creating Semco Identities"
+
+    createSemco
+
+    infoln "Creating AviparAirline Identities"
+
+    createAviparAirline
+
+    infoln "Creating PamulangAirway Identities"
+
+    createPamulangAirway
 
     infoln "Creating Orderer Org Identities"
 
@@ -225,7 +279,7 @@ function createOrgs() {
 
   fi
 
-  infoln "Generating CCP files for Manufacturer, Vendor, Airline, and MRO"
+  infoln "Generating CCP files for Cirbus, Soeing, NataAir, and LycanAirSA"
   ./organizations/ccp-generate.sh
 }
 
@@ -318,10 +372,15 @@ function networkDown() {
     # remove orderer block and other channel configuration transactions and certs
     docker run --rm -v "$(pwd):/data" busybox sh -c 'cd /data && rm -rf system-genesis-block/*.block organizations/peerOrganizations organizations/ordererOrganizations'
     ## remove fabric ca artifacts
-    docker run --rm -v "$(pwd):/data" busybox sh -c 'cd /data && rm -rf organizations/fabric-ca/manufacturer/msp organizations/fabric-ca/manufacturer/tls-cert.pem organizations/fabric-ca/manufacturer/ca-cert.pem organizations/fabric-ca/manufacturer/IssuerPublicKey organizations/fabric-ca/manufacturer/IssuerRevocationPublicKey organizations/fabric-ca/manufacturer/fabric-ca-server.db'
-    docker run --rm -v "$(pwd):/data" busybox sh -c 'cd /data && rm -rf organizations/fabric-ca/vendor/msp organizations/fabric-ca/vendor/tls-cert.pem organizations/fabric-ca/vendor/ca-cert.pem organizations/fabric-ca/vendor/IssuerPublicKey organizations/fabric-ca/vendor/IssuerRevocationPublicKey organizations/fabric-ca/vendor/fabric-ca-server.db'
-    docker run --rm -v "$(pwd):/data" busybox sh -c 'cd /data && rm -rf organizations/fabric-ca/airline/msp organizations/fabric-ca/airline/tls-cert.pem organizations/fabric-ca/airline/ca-cert.pem organizations/fabric-ca/airline/IssuerPublicKey organizations/fabric-ca/airline/IssuerRevocationPublicKey organizations/fabric-ca/airline/fabric-ca-server.db'
-    docker run --rm -v "$(pwd):/data" busybox sh -c 'cd /data && rm -rf organizations/fabric-ca/mro/msp organizations/fabric-ca/mro/tls-cert.pem organizations/fabric-ca/mro/ca-cert.pem organizations/fabric-ca/mro/IssuerPublicKey organizations/fabric-ca/mro/IssuerRevocationPublicKey organizations/fabric-ca/mro/fabric-ca-server.db'
+    docker run --rm -v "$(pwd):/data" busybox sh -c 'cd /data && rm -rf organizations/fabric-ca/cirbus/msp organizations/fabric-ca/cirbus/tls-cert.pem organizations/fabric-ca/cirbus/ca-cert.pem organizations/fabric-ca/cirbus/IssuerPublicKey organizations/fabric-ca/cirbus/IssuerRevocationPublicKey organizations/fabric-ca/cirbus/fabric-ca-server.db'
+    docker run --rm -v "$(pwd):/data" busybox sh -c 'cd /data && rm -rf organizations/fabric-ca/soeing/msp organizations/fabric-ca/soeing/tls-cert.pem organizations/fabric-ca/soeing/ca-cert.pem organizations/fabric-ca/soeing/IssuerPublicKey organizations/fabric-ca/soeing/IssuerRevocationPublicKey organizations/fabric-ca/soeing/fabric-ca-server.db'
+    docker run --rm -v "$(pwd):/data" busybox sh -c 'cd /data && rm -rf organizations/fabric-ca/nataair/msp organizations/fabric-ca/nataair/tls-cert.pem organizations/fabric-ca/nataair/ca-cert.pem organizations/fabric-ca/nataair/IssuerPublicKey organizations/fabric-ca/nataair/IssuerRevocationPublicKey organizations/fabric-ca/nataair/fabric-ca-server.db'
+    docker run --rm -v "$(pwd):/data" busybox sh -c 'cd /data && rm -rf organizations/fabric-ca/lycanairsa/msp organizations/fabric-ca/lycanairsa/tls-cert.pem organizations/fabric-ca/lycanairsa/ca-cert.pem organizations/fabric-ca/lycanairsa/IssuerPublicKey organizations/fabric-ca/lycanairsa/IssuerRevocationPublicKey organizations/fabric-ca/lycanairsa/fabric-ca-server.db'
+    docker run --rm -v "$(pwd):/data" busybox sh -c 'cd /data && rm -rf organizations/fabric-ca/cengkarengairwayengineering/msp organizations/fabric-ca/cengkarengairwayengineering/tls-cert.pem organizations/fabric-ca/cengkarengairwayengineering/ca-cert.pem organizations/fabric-ca/cengkarengairwayengineering/IssuerPublicKey organizations/fabric-ca/cengkarengairwayengineering/IssuerRevocationPublicKey organizations/fabric-ca/cengkarengairwayengineering/fabric-ca-server.db'
+    docker run --rm -v "$(pwd):/data" busybox sh -c 'cd /data && rm -rf organizations/fabric-ca/semco/msp organizations/fabric-ca/semco/tls-cert.pem organizations/fabric-ca/semco/ca-cert.pem organizations/fabric-ca/semco/IssuerPublicKey organizations/fabric-ca/semco/IssuerRevocationPublicKey organizations/fabric-ca/semco/fabric-ca-server.db'
+    docker run --rm -v "$(pwd):/data" busybox sh -c 'cd /data && rm -rf organizations/fabric-ca/aviparairline/msp organizations/fabric-ca/aviparairline/tls-cert.pem organizations/fabric-ca/aviparairline/ca-cert.pem organizations/fabric-ca/aviparairline/IssuerPublicKey organizations/fabric-ca/aviparairline/IssuerRevocationPublicKey organizations/fabric-ca/aviparairline/fabric-ca-server.db'
+    docker run --rm -v "$(pwd):/data" busybox sh -c 'cd /data && rm -rf organizations/fabric-ca/pamulangairway/msp organizations/fabric-ca/pamulangairway/tls-cert.pem organizations/fabric-ca/pamulangairway/ca-cert.pem organizations/fabric-ca/pamulangairway/IssuerPublicKey organizations/fabric-ca/pamulangairway/IssuerRevocationPublicKey organizations/fabric-ca/pamulangairway/fabric-ca-server.db'
+
     docker run --rm -v "$(pwd):/data" busybox sh -c 'cd /data && rm -rf organizations/fabric-ca/ordererOrg/msp organizations/fabric-ca/ordererOrg/tls-cert.pem organizations/fabric-ca/ordererOrg/ca-cert.pem organizations/fabric-ca/ordererOrg/IssuerPublicKey organizations/fabric-ca/ordererOrg/IssuerRevocationPublicKey organizations/fabric-ca/ordererOrg/fabric-ca-server.db'
     docker run --rm -v "$(pwd):/data" busybox sh -c 'cd /data && rm -rf addOrg3/fabric-ca/org3/msp addOrg3/fabric-ca/org3/tls-cert.pem addOrg3/fabric-ca/org3/ca-cert.pem addOrg3/fabric-ca/org3/IssuerPublicKey addOrg3/fabric-ca/org3/IssuerRevocationPublicKey addOrg3/fabric-ca/org3/fabric-ca-server.db'
     # remove channel and script artifacts

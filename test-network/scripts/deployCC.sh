@@ -286,75 +286,137 @@ chaincodeQuery() {
 ## package the chaincode
 packageChaincode
 
-## Install chaincode on peer0.manufacturer, peer0.vendor, and peer0.airline
-infoln "Installing chaincode on peer0.manufacturer..."
-installChaincode Manufacturer
-infoln "Install chaincode on peer0.vendor..."
-installChaincode Vendor
-infoln "Install chaincode on peer0.airline..."
-installChaincode Airline
-infoln "Install chaincode on peer0.mro..."
-installChaincode MRO
+## Install chaincode on every org peer
+infoln "Installing chaincode on peer0.cirbus..."
+installChaincode Cirbus
+infoln "Install chaincode on peer0.soeing..."
+installChaincode Soeing
+infoln "Install chaincode on peer0.nataair..."
+installChaincode NataAir
+infoln "Install chaincode on peer0.lycanairsa..."
+installChaincode LycanAirSA
+infoln "Installing chaincode on peer0.cengkarengairwayengineering..."
+installChaincode CengkarengAirwayEngineering
+infoln "Install chaincode on peer0.semco..."
+installChaincode Semco
+infoln "Install chaincode on peer0.aviparairline..."
+installChaincode AviparAirline
+infoln "Install chaincode on peer0.pamulangairway..."
+installChaincode PamulangAirway
 
 ## query whether the chaincode is installed
-queryInstalled Airline
+queryInstalled NataAir
 
-## approve the definition for Manufacturer
-approveForMyOrg Manufacturer
-
-## check whether the chaincode definition is ready to be committed
-## expect org1 to have approved and org2 not to
-checkCommitReadiness Manufacturer "\"ManufacturerMSP\": true" "\"VendorMSP\": false" "\"AirlineMSP\": false" "\"MROMSP\": false"
-checkCommitReadiness Vendor "\"ManufacturerMSP\": true" "\"VendorMSP\": false" "\"AirlineMSP\": false" "\"MROMSP\": false"
-checkCommitReadiness Airline "\"ManufacturerMSP\": true" "\"VendorMSP\": false" "\"AirlineMSP\": false" "\"MROMSP\": false"
-checkCommitReadiness MRO "\"ManufacturerMSP\": true" "\"VendorMSP\": false" "\"AirlineMSP\": false" "\"MROMSP\": false"
-
-## now approve also for Vendor
-approveForMyOrg Vendor
+## approve the definition for Org
+approveForMyOrg Cirbus
 
 ## check whether the chaincode definition is ready to be committed
-## expect them both to have approved
-checkCommitReadiness Manufacturer "\"ManufacturerMSP\": true" "\"VendorMSP\": true" "\"AirlineMSP\": false" "\"MROMSP\": false"
-checkCommitReadiness Vendor "\"ManufacturerMSP\": true" "\"VendorMSP\": true" "\"AirlineMSP\": false" "\"MROMSP\": false"
-checkCommitReadiness Airline "\"ManufacturerMSP\": true" "\"VendorMSP\": true" "\"AirlineMSP\": false" "\"MROMSP\": false"
-checkCommitReadiness MRO "\"ManufacturerMSP\": true" "\"VendorMSP\": true" "\"AirlineMSP\": false" "\"MROMSP\": false"
+checkCommitReadiness Cirbus "\"CirbusMSP\": true" "\"SoeingMSP\": false" "\"NataAirMSP\": false" "\"LycanAirSAMSP\": false" "\"CengkarengAirwayEngineeringMSP\": false" "\"SemcoMSP\": false" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness Soeing "\"CirbusMSP\": true" "\"SoeingMSP\": false" "\"NataAirMSP\": false" "\"LycanAirSAMSP\": false" "\"CengkarengAirwayEngineeringMSP\": false" "\"SemcoMSP\": false" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness NataAir "\"CirbusMSP\": true" "\"SoeingMSP\": false" "\"NataAirMSP\": false" "\"LycanAirSAMSP\": false" "\"CengkarengAirwayEngineeringMSP\": false" "\"SemcoMSP\": false" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness LycanAirSA "\"CirbusMSP\": true" "\"SoeingMSP\": false" "\"NataAirMSP\": false" "\"LycanAirSAMSP\": false" "\"CengkarengAirwayEngineeringMSP\": false" "\"SemcoMSP\": false" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness CengkarengAirwayEngineering "\"CirbusMSP\": true" "\"SoeingMSP\": false" "\"NataAirMSP\": false" "\"LycanAirSAMSP\": false" "\"CengkarengAirwayEngineeringMSP\": false" "\"SemcoMSP\": false" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness Semco "\"CirbusMSP\": true" "\"SoeingMSP\": false" "\"NataAirMSP\": false" "\"LycanAirSAMSP\": false" "\"CengkarengAirwayEngineeringMSP\": false" "\"SemcoMSP\": false" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness AviparAirline "\"CirbusMSP\": true" "\"SoeingMSP\": false" "\"NataAirMSP\": false" "\"LycanAirSAMSP\": false" "\"CengkarengAirwayEngineeringMSP\": false" "\"SemcoMSP\": false" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness PamulangAirway "\"CirbusMSP\": true" "\"SoeingMSP\": false" "\"NataAirMSP\": false" "\"LycanAirSAMSP\": false" "\"CengkarengAirwayEngineeringMSP\": false" "\"SemcoMSP\": false" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
 
-## now approve also for Airline
-approveForMyOrg Airline
+approveForMyOrg Soeing
 
-## check whether the chaincode definition is ready to be committed
-## expect them both to have approved
-checkCommitReadiness Manufacturer "\"ManufacturerMSP\": true" "\"VendorMSP\": true" "\"AirlineMSP\": true" "\"MROMSP\": false"
-checkCommitReadiness Vendor "\"ManufacturerMSP\": true" "\"VendorMSP\": true" "\"AirlineMSP\": true" "\"MROMSP\": false"
-checkCommitReadiness Airline "\"ManufacturerMSP\": true" "\"VendorMSP\": true" "\"AirlineMSP\": true" "\"MROMSP\": false"
-checkCommitReadiness MRO "\"ManufacturerMSP\": true" "\"VendorMSP\": true" "\"AirlineMSP\": true" "\"MROMSP\": false"
+checkCommitReadiness Cirbus "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": false" "\"LycanAirSAMSP\": false" "\"CengkarengAirwayEngineeringMSP\": false" "\"SemcoMSP\": false" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness Soeing "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": false" "\"LycanAirSAMSP\": false" "\"CengkarengAirwayEngineeringMSP\": false" "\"SemcoMSP\": false" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness NataAir "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": false" "\"LycanAirSAMSP\": false" "\"CengkarengAirwayEngineeringMSP\": false" "\"SemcoMSP\": false" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness LycanAirSA "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": false" "\"LycanAirSAMSP\": false" "\"CengkarengAirwayEngineeringMSP\": false" "\"SemcoMSP\": false" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness CengkarengAirwayEngineering "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": false" "\"LycanAirSAMSP\": false" "\"CengkarengAirwayEngineeringMSP\": false" "\"SemcoMSP\": false" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness Semco "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": false" "\"LycanAirSAMSP\": false" "\"CengkarengAirwayEngineeringMSP\": false" "\"SemcoMSP\": false" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness AviparAirline "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": false" "\"LycanAirSAMSP\": false" "\"CengkarengAirwayEngineeringMSP\": false" "\"SemcoMSP\": false" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness PamulangAirway "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": false" "\"LycanAirSAMSP\": false" "\"CengkarengAirwayEngineeringMSP\": false" "\"SemcoMSP\": false" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
 
-## now approve also for Airline
-approveForMyOrg MRO
+approveForMyOrg NataAir
 
-## check whether the chaincode definition is ready to be committed
-## expect them both to have approved
-checkCommitReadiness Manufacturer "\"ManufacturerMSP\": true" "\"VendorMSP\": true" "\"AirlineMSP\": true" "\"MROMSP\": true"
-checkCommitReadiness Vendor "\"ManufacturerMSP\": true" "\"VendorMSP\": true" "\"AirlineMSP\": true" "\"MROMSP\": true"
-checkCommitReadiness Airline "\"ManufacturerMSP\": true" "\"VendorMSP\": true" "\"AirlineMSP\": true" "\"MROMSP\": true"
-checkCommitReadiness MRO "\"ManufacturerMSP\": true" "\"VendorMSP\": true" "\"AirlineMSP\": true" "\"MROMSP\": true"
+checkCommitReadiness Cirbus "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": false" "\"CengkarengAirwayEngineeringMSP\": false" "\"SemcoMSP\": false" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness Soeing "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": false" "\"CengkarengAirwayEngineeringMSP\": false" "\"SemcoMSP\": false" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness NataAir "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": false" "\"CengkarengAirwayEngineeringMSP\": false" "\"SemcoMSP\": false" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness LycanAirSA "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": false" "\"CengkarengAirwayEngineeringMSP\": false" "\"SemcoMSP\": false" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness CengkarengAirwayEngineering "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": false" "\"CengkarengAirwayEngineeringMSP\": false" "\"SemcoMSP\": false" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness Semco "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": false" "\"CengkarengAirwayEngineeringMSP\": false" "\"SemcoMSP\": false" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness AviparAirline "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": false" "\"CengkarengAirwayEngineeringMSP\": false" "\"SemcoMSP\": false" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness PamulangAirway "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": false" "\"CengkarengAirwayEngineeringMSP\": false" "\"SemcoMSP\": false" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+
+approveForMyOrg LycanAirSA
+
+checkCommitReadiness Cirbus "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": true" "\"CengkarengAirwayEngineeringMSP\": false" "\"SemcoMSP\": false" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness Soeing "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": true" "\"CengkarengAirwayEngineeringMSP\": false" "\"SemcoMSP\": false" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness NataAir "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": true" "\"CengkarengAirwayEngineeringMSP\": false" "\"SemcoMSP\": false" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness LycanAirSA "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": true" "\"CengkarengAirwayEngineeringMSP\": false" "\"SemcoMSP\": false" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness CengkarengAirwayEngineering "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": true" "\"CengkarengAirwayEngineeringMSP\": false" "\"SemcoMSP\": false" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness Semco "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": true" "\"CengkarengAirwayEngineeringMSP\": false" "\"SemcoMSP\": false" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness AviparAirline "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": true" "\"CengkarengAirwayEngineeringMSP\": false" "\"SemcoMSP\": false" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness PamulangAirway "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": true" "\"CengkarengAirwayEngineeringMSP\": false" "\"SemcoMSP\": false" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+
+approveForMyOrg CengkarengAirwayEngineering
+
+checkCommitReadiness Cirbus "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": true" "\"CengkarengAirwayEngineeringMSP\": true" "\"SemcoMSP\": false" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness Soeing "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": true" "\"CengkarengAirwayEngineeringMSP\": true" "\"SemcoMSP\": false" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness NataAir "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": true" "\"CengkarengAirwayEngineeringMSP\": true" "\"SemcoMSP\": false" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness LycanAirSA "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": true" "\"CengkarengAirwayEngineeringMSP\": true" "\"SemcoMSP\": false" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness CengkarengAirwayEngineering "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": true" "\"CengkarengAirwayEngineeringMSP\": true" "\"SemcoMSP\": false" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness Semco "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": true" "\"CengkarengAirwayEngineeringMSP\": true" "\"SemcoMSP\": false" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness AviparAirline "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": true" "\"CengkarengAirwayEngineeringMSP\": true" "\"SemcoMSP\": false" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness PamulangAirway "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": true" "\"CengkarengAirwayEngineeringMSP\": true" "\"SemcoMSP\": false" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+
+approveForMyOrg Semco
+
+checkCommitReadiness Cirbus "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": true" "\"CengkarengAirwayEngineeringMSP\": true" "\"SemcoMSP\": true" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness Soeing "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": true" "\"CengkarengAirwayEngineeringMSP\": true" "\"SemcoMSP\": true" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness NataAir "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": true" "\"CengkarengAirwayEngineeringMSP\": true" "\"SemcoMSP\": true" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness LycanAirSA "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": true" "\"CengkarengAirwayEngineeringMSP\": true" "\"SemcoMSP\": true" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness CengkarengAirwayEngineering "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": true" "\"CengkarengAirwayEngineeringMSP\": true" "\"SemcoMSP\": true" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness Semco "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": true" "\"CengkarengAirwayEngineeringMSP\": true" "\"SemcoMSP\": true" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness AviparAirline "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": true" "\"CengkarengAirwayEngineeringMSP\": true" "\"SemcoMSP\": true" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness PamulangAirway "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": true" "\"CengkarengAirwayEngineeringMSP\": true" "\"SemcoMSP\": true" "\"AviparAirlineMSP\": false" "\"PamulangAirwayMSP\": false"
+
+approveForMyOrg AviparAirline
+
+checkCommitReadiness Cirbus "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": true" "\"CengkarengAirwayEngineeringMSP\": true" "\"SemcoMSP\": true" "\"AviparAirlineMSP\": true" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness Soeing "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": true" "\"CengkarengAirwayEngineeringMSP\": true" "\"SemcoMSP\": true" "\"AviparAirlineMSP\": true" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness NataAir "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": true" "\"CengkarengAirwayEngineeringMSP\": true" "\"SemcoMSP\": true" "\"AviparAirlineMSP\": true" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness LycanAirSA "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": true" "\"CengkarengAirwayEngineeringMSP\": true" "\"SemcoMSP\": true" "\"AviparAirlineMSP\": true" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness CengkarengAirwayEngineering "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": true" "\"CengkarengAirwayEngineeringMSP\": true" "\"SemcoMSP\": true" "\"AviparAirlineMSP\": true" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness Semco "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": true" "\"CengkarengAirwayEngineeringMSP\": true" "\"SemcoMSP\": true" "\"AviparAirlineMSP\": true" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness AviparAirline "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": true" "\"CengkarengAirwayEngineeringMSP\": true" "\"SemcoMSP\": true" "\"AviparAirlineMSP\": true" "\"PamulangAirwayMSP\": false"
+checkCommitReadiness PamulangAirway "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": true" "\"CengkarengAirwayEngineeringMSP\": true" "\"SemcoMSP\": true" "\"AviparAirlineMSP\": true" "\"PamulangAirwayMSP\": false"
+
+approveForMyOrg PamulangAirway
+
+checkCommitReadiness Cirbus "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": true" "\"CengkarengAirwayEngineeringMSP\": true" "\"SemcoMSP\": true" "\"AviparAirlineMSP\": true" "\"PamulangAirwayMSP\": true"
+checkCommitReadiness Soeing "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": true" "\"CengkarengAirwayEngineeringMSP\": true" "\"SemcoMSP\": true" "\"AviparAirlineMSP\": true" "\"PamulangAirwayMSP\": true"
+checkCommitReadiness NataAir "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": true" "\"CengkarengAirwayEngineeringMSP\": true" "\"SemcoMSP\": true" "\"AviparAirlineMSP\": true" "\"PamulangAirwayMSP\": true"
+checkCommitReadiness LycanAirSA "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": true" "\"CengkarengAirwayEngineeringMSP\": true" "\"SemcoMSP\": true" "\"AviparAirlineMSP\": true" "\"PamulangAirwayMSP\": true"
+checkCommitReadiness CengkarengAirwayEngineering "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": true" "\"CengkarengAirwayEngineeringMSP\": true" "\"SemcoMSP\": true" "\"AviparAirlineMSP\": true" "\"PamulangAirwayMSP\": true"
+checkCommitReadiness Semco "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": true" "\"CengkarengAirwayEngineeringMSP\": true" "\"SemcoMSP\": true" "\"AviparAirlineMSP\": true" "\"PamulangAirwayMSP\": true"
+checkCommitReadiness AviparAirline "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": true" "\"CengkarengAirwayEngineeringMSP\": true" "\"SemcoMSP\": true" "\"AviparAirlineMSP\": true" "\"PamulangAirwayMSP\": true"
+checkCommitReadiness PamulangAirway "\"CirbusMSP\": true" "\"SoeingMSP\": true" "\"NataAirMSP\": true" "\"LycanAirSAMSP\": true" "\"CengkarengAirwayEngineeringMSP\": true" "\"SemcoMSP\": true" "\"AviparAirlineMSP\": true" "\"PamulangAirwayMSP\": true"
 
 ## now that we know for sure both orgs have approved, commit the definition
-commitChaincodeDefinition Manufacturer Vendor Airline MRO
+commitChaincodeDefinition Cirbus Soeing NataAir LycanAirSA CengkarengAirwayEngineering Semco AviparAirline PamulangAirway
 infoln "Commit suceed"
 
 ## query on both orgs to see that the definition committed successfully
-queryCommitted Manufacturer
-queryCommitted Vendor
-queryCommitted Airline
-queryCommitted MRO
+queryCommitted Cirbus
+queryCommitted Soeing
+queryCommitted NataAir
+queryCommitted LycanAirSA
+queryCommitted CengkarengAirwayEngineering
+queryCommitted Semco
+queryCommitted AviparAirline
+queryCommitted PamulangAirway
 
 ## Invoke the chaincode - this does require that the chaincode have the 'initLedger'
 ## method defined
 if [ "$CC_INIT_FCN" = "NA" ]; then
   infoln "Chaincode initialization is not required"
 else
-  chaincodeInvokeInit Manufacturer Vendor Airline MRO
+  chaincodeInvokeInit Cirbus Soeing NataAir LycanAirSA CengkarengAirwayEngineering Semco AviparAirline PamulangAirway
 fi
 
 exit 0

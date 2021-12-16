@@ -22,10 +22,14 @@ else
 fi
 
 # clean out any old identites in the wallets
-rm -rf javascript/orgManufacturer-wallet/*
-rm -rf javascript/orgVendor-wallet/*
-rm -rf javascript/orgAirline-wallet/*
-rm -rf javascript/orgMRO-wallet/*
+rm -rf javascript/orgCirbus-wallet/*
+rm -rf javascript/orgSoeing-wallet/*
+rm -rf javascript/orgNataAir-wallet/*
+rm -rf javascript/orgLycanAirSA-wallet/*
+rm -rf javascript/orgCengkarengAirwayEngineering-wallet/*
+rm -rf javascript/orgSemco-wallet/*
+rm -rf javascript/orgAviparAirline-wallet/*
+rm -rf javascript/orgPamulangAirway-wallet/*
 
 
 # launch network; create channel and join peer to channel

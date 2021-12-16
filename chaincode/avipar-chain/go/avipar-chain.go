@@ -32,7 +32,7 @@ type Asset struct {
 	Timestamp        string `json:"Timestamp"`
 	Quantity         int    `json:"Quantity"`
 	Weight           int    `json:"Weight"`
-	Org       	     string `json:"Org"` 
+	Org       	     Organization `json:"Org"` 
 	FlightLog	     string `json:"FlightLog"` 
 	NextOverhaul	 string `json:"NextOverhaul"` 
 	TotalHoursSpend	 int   `json:"TotalHoursSpend"` 
@@ -53,8 +53,8 @@ type PurchaseOrder struct{
 	BuyerEmail	     string `json:"BuyerEmail"`
 	Quantity         int    `json:"Quantity"`
 	Status			 string `json:"Status"`
-	BuyerOrg         string `json:"BuyerOrg"`
-	SellerOrg         string `json:"SellerOrg"`
+	BuyerOrg         Organization `json:"BuyerOrg"`
+	SellerOrg         Organization `json:"SellerOrg"`
 	Timestamp        string `json:"Timestamp"`
 	InvoiceReferenceNo string `json:"InvoiceReferenceNo"`
 }
@@ -65,8 +65,8 @@ type RepairOrder struct{
 	AssetName         string `json:"AssetName"`
 	RequesterEmail	 string `json:"RequesterEmail"`
 	Status			 string `json:"Status"`
-	RequesterOrg     string `json:"RequesterOrg"`
-	RepairerOrg      string `json:"RepairerOrg"`
+	RequesterOrg     Organization `json:"RequesterOrg"`
+	RepairerOrg      Organization `json:"RepairerOrg"`
 	Timestamp        string `json:"Timestamp"`
 	InvoiceReferenceNo string `json:"InvoiceReferenceNo"`
 }
@@ -75,10 +75,16 @@ type User struct {
 	Name      string `json:"Name"`
 	User_ID   string `json:"UserID"`
 	Email     string `json:"Email"`
-	Org       string `json:"Org"`
+	Org       	     Organization `json:"Org"` 
 	Role       string `json:"Role"`
 	Address   string `json:"Address"`
 	Password  string `json:"Password"`
+}
+
+type Organization struct {
+	ID           string `json:"ID"`
+	Name         string `json:"Name"`
+	Type         string `json:"Type"`
 }
 
 type QueryResultAsset struct {
@@ -233,9 +239,60 @@ func (s *SmartContract) InitCounters(ctx contractapi.TransactionContextInterface
 	return nil
 }
 
+func (s *SmartContract) InitOrganization(ctx contractapi.TransactionContextInterface) error {
+	orgArray := [8]Organization {
+		{
+			ID: "cirbus",
+			Name: "Cirbus",
+			Type: "manufacturer",
+		},
+		{
+			ID: "soeing",
+			Name: "Soeing",
+			Type: "manufacturer",
+		},
+		{
+			ID: "nataair",
+			Name: "NataAir",
+			Type: "vendor",
+		},
+		{
+			ID: "lycanairsa",
+			Name: "LycanAirSA",
+			Type: "vendor",
+		},
+		{
+			ID: "cengkarengairwayengineering",
+			Name: "CengkarengAirwayEngineering",
+			Type: "mro",
+		},
+		{
+			ID: "semco",
+			Name: "Semco",
+			Type: "mro",
+		},
+		{
+			ID: "aviparairline",
+			Name: "AviparAirline",
+			Type: "airline",
+		},
+		{
+			ID: "pamulangairway",
+			Name: "PamulangAirway",
+			Type: "airline",
+		},
+	}
+	for i := 0; i < 8; i++ {
+		orgAsBytes, _ := json.Marshal(orgArray[i])
+		ctx.GetStub().PutState(orgArray[i].ID, orgAsBytes)
+	}
+	return nil
+}
+
 func (s *SmartContract) InitLedger(ctx contractapi.TransactionContextInterface) error {
 	// Initializing Car Counter
 	s.InitCounters(ctx)
+	s.InitOrganization(ctx)
 	
 	return nil
 }
@@ -323,9 +380,9 @@ func (s *SmartContract) UpdatePurchaseOrderStatus(ctx contractapi.TransactionCon
 	}
 
 	if approve {
-		if po.Status == "Waiting for Buyer Organization" && buyer.Org == updateUser.Org {
+		if po.Status == "Waiting for Buyer Organization" && buyer.Org.ID == updateUser.Org.ID {
 			po.Status = "Waiting for Seller Organization"
-		} else if po.Status == "Waiting for Seller Organization" && user.Org == updateUser.Org {
+		} else if po.Status == "Waiting for Seller Organization" && user.Org.ID == updateUser.Org.ID {
 			po.InvoiceReferenceNo = s.CreateInvoice(ctx)
 			po.Status = "Completed"
 			s.UpdateAsset(ctx, asset.ID, asset.Name, asset.Number, asset.Status, po.Quantity, asset.Weight, timestamp, updateBy, buyer.Email, po, nil)
@@ -362,13 +419,15 @@ func (s *SmartContract) UpdatePurchaseOrderStatus(ctx contractapi.TransactionCon
 	return &result, nil
 }
 
-func (s *SmartContract) CreateRepairOrder(ctx contractapi.TransactionContextInterface, assetId string, email string, timestamp string) (bool, error) {
+func (s *SmartContract) CreateRepairOrder(ctx contractapi.TransactionContextInterface, assetId string, email string, repairerId string,timestamp string) (bool, error) {
 	status := "Waiting for Requester Organization"
 
 	entitiesUserEmail, _ := s.QueryUserByEmail(ctx, email)
 	if !entitiesUserEmail.Status{
 		return false, nil
 	}
+
+	repairerOrg, _ := s.GetOrganization(ctx, repairerId)
 
 	queryAsset, _ := s.QueryAsset(ctx, assetId)
 	asset := queryAsset.Record
@@ -392,7 +451,7 @@ func (s *SmartContract) CreateRepairOrder(ctx contractapi.TransactionContextInte
 		RequesterEmail: email,
 		Status: status,
 		RequesterOrg: user.Org,
-		RepairerOrg: "mro",
+		RepairerOrg: repairerOrg,
 		Timestamp: timestamp,
 	}
 
@@ -443,14 +502,14 @@ func (s *SmartContract) UpdateRepairOrderStatus(ctx contractapi.TransactionConte
 	}
 
 	if approve {
-		if ro.Status == "Waiting for Requester Organization" && requester.Org == updateUser.Org {
+		if ro.Status == "Waiting for Requester Organization" && requester.Org.ID == updateUser.Org.ID {
 			ro.Status = "Waiting for Repairer Organization"
-		} else if ro.Status == "Waiting for Repairer Organization" && ro.RepairerOrg == updateUser.Org {
+		} else if ro.Status == "Waiting for Repairer Organization" && ro.RepairerOrg.ID == updateUser.Org.ID {
 			s.UpdateAsset(ctx, asset.ID, asset.Name, asset.Number, "Repairing", asset.Quantity, asset.Weight, timestamp, updateBy, "", nil, ro)
 			ro.Status = "Repairing"
-		} else if ro.Status == "Repairing" && ro.RepairerOrg == updateUser.Org {
+		} else if ro.Status == "Repairing" && ro.RepairerOrg.ID == updateUser.Org.ID {
 			tempStatus := "Available"
-			if user.Org == "airline"{
+			if user.Org.Type == "airline"{
 				tempStatus = "Not Available"
 			} 
 			ro.InvoiceReferenceNo =  s.CreateInvoice(ctx)
@@ -501,16 +560,16 @@ func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface,
 		return false, nil
 	}
 	
-	userOrg := entitiesUserEmail.Record.Org
-	if poReference == nil && (userOrg != "manufacturer" && (userOrg != "airline" && previousAsset != "")) {
+	userOrg, _ := s.GetOrganization(ctx, entitiesUserEmail.Record.Org.ID)
+	if poReference == nil && (userOrg.Type != "manufacturer" && (userOrg.Type != "airline" && previousAsset != "")) {
 		return false, nil
 	}
 
-	if userOrg == "airline"{
+	if userOrg.Type == "airline"{
 		status = "Not Available"
 	} 
 
-	if userOrg == "manufacturer"{
+	if userOrg.Type == "manufacturer"{
 		createDate = timestamp
 	} 
 
@@ -908,6 +967,15 @@ func (s *SmartContract) QueryUserByEmail(ctx contractapi.TransactionContextInter
 	return result, nil
 }
 
+func (s *SmartContract) GetOrganization(ctx contractapi.TransactionContextInterface, id string) (Organization, error) {
+
+	orgAsBytes, _ := ctx.GetStub().GetState(id)
+	org := new(Organization)
+	_ = json.Unmarshal(orgAsBytes, org)
+
+	return *org, nil
+}
+
 func (s *SmartContract) SignIn(ctx contractapi.TransactionContextInterface, email string, password string) (*QueryResultSignIn, error) {
 	result := QueryResultSignIn{}
 	result.Status = false
@@ -967,18 +1035,18 @@ func (s *SmartContract) TransferAssetOwner(ctx contractapi.TransactionContextInt
 
 	newUserOrg := entitiesNewUserEmail.Record.Org
 	
-	if userOrg == "manufacturer" && newUserOrg != "vendor"{
+	if userOrg.Type == "manufacturer" && newUserOrg.Type != "vendor"{
 		result.Message = "Only Vendor able to buy from Manufacturer"
 		return &result, nil
-	} else if userOrg == "vendor" && newUserOrg != "mro"{
+	} else if userOrg.Type == "vendor" && newUserOrg.Type != "mro"{
 		result.Message = "Only MRO able to buy from Vendor"
 		return &result, nil
 
-	} else if userOrg == "mro" && newUserOrg != "airline"{
+	} else if userOrg.Type == "mro" && newUserOrg.Type != "airline"{
 		result.Message = "Only Airline able to buy from MRO"
 		return &result, nil
 		
-	} else if userOrg == "airline"{
+	} else if userOrg.Type == "airline"{
 		result.Message = "You are not able to buy spare parts from Airline"
 		return &result, nil
 	}
@@ -1077,7 +1145,7 @@ func (s *SmartContract) UpdateAsset(ctx contractapi.TransactionContextInterface,
 		} else if quantity == 0 {
 			status = "Not Available"
 		}
-		if newOwnerOrg == "airline"{
+		if newOwnerOrg.Type == "airline"{
 			assetCounter := getCounter(ctx, "AssetCounterNo")
 			for i := 0; i < tempQuantity; i++ {
     			s.CreateAsset(ctx, asset.Number, asset.Name, newOwner, 1, asset.Weight, timestamp, assetId, poReference, roReference, assetCounter, asset.CreateDate)
@@ -1089,8 +1157,8 @@ func (s *SmartContract) UpdateAsset(ctx contractapi.TransactionContextInterface,
 		}
 	}
 	
-	if roReference == nil && (newOwner == "" && userOrg != updateUserOrg){
-		result.Message = "You are not from " + userOrg + " organization"
+	if roReference == nil && (newOwner == "" && userOrg.ID != updateUserOrg.ID){
+		result.Message = "You are not from " + userOrg.Name + " organization"
 		return &result, nil
 	}
 
@@ -1133,7 +1201,9 @@ func (s *SmartContract) CreateUser(ctx contractapi.TransactionContextInterface, 
 
 	indexName := "email~userid"
 
-	var comAsset = User{Name: name, User_ID: "USER" + strconv.Itoa(userCounter), Email: email, Org: org, Role: role, Address: address, Password: password}
+	organization, _ := s.GetOrganization(ctx, org)
+
+	var comAsset = User{Name: name, User_ID: "USER" + strconv.Itoa(userCounter), Email: email, Org: organization, Role: role, Address: address, Password: password}
 	comAssetAsBytes, _ := json.Marshal(comAsset)
 
 	emailCheck, _ := s.QueryUserByEmail(ctx, email)

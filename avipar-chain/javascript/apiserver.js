@@ -71,7 +71,7 @@ app.use((req, res, next) => {
                 return;
             } else {
                 req.username = decoded.username;
-                req.orgname = decoded.orgName;
+                req.orgid = decoded.orgID;
                 console.log('Decoded from JWT token: username - ' + decoded.username + ', orgname - ' + decoded.orgName);
                 return next();
             }
@@ -95,7 +95,7 @@ app.get('/api/queryallusers', async function (req, res)  {
 
 app.get('/api/queryallassets', async function (req, res)  {
         try {         
-            var networkObj = await getNetwork(req.orgname, req.username);
+            var networkObj = await getNetwork(req.orgid, req.username);
 
             const result = await networkObj.contract.evaluateTransaction('queryAllAssets');
             console.log(JSON.parse(result));
@@ -110,7 +110,7 @@ app.get('/api/queryallassets', async function (req, res)  {
 
 app.get('/api/queryallpo', async function (req, res)  {
         try {         
-            var networkObj = await getNetwork(req.orgname, req.username);
+            var networkObj = await getNetwork(req.orgid, req.username);
 
             const result = await networkObj.contract.evaluateTransaction('queryAllPO');
             console.log(JSON.parse(result));
@@ -125,7 +125,7 @@ app.get('/api/queryallpo', async function (req, res)  {
 
 app.get('/api/queryallro', async function (req, res)  {
     try {         
-        var networkObj = await getNetwork(req.orgname, req.username);
+        var networkObj = await getNetwork(req.orgid, req.username);
 
         const result = await networkObj.contract.evaluateTransaction('queryAllRO');
         console.log(JSON.parse(result));
@@ -183,9 +183,9 @@ app.post('/api/asset/add', async function (req, res) {
         var todayDateTime = new Date();   
         var timestamp = todayDateTime.getUTCFullYear() +"-"+ (todayDateTime.getUTCMonth()+1) +"-"+ todayDateTime.getUTCDate() + " " + todayDateTime.getUTCHours() + ":" + todayDateTime.getUTCMinutes() + ":" + todayDateTime.getUTCSeconds();
 
-        var networkObj = await getNetwork(req.orgname, req.username);
+        var networkObj = await getNetwork(req.orgid, req.username);
 
-        var resultBuf = await networkObj.contract.submitTransaction('createAssetAPI', req.body.number, req.body.name, req.username, req.body.quantity, req.body.weight, timestamp, "");
+        var resultBuf = await networkObj.contract.submitTransaction('createAssetAPI', req.body.number, req.body.name, req.username, req.body.quantity, req.body.weight, timestamp, "", "");
         var result= JSON.parse(resultBuf.toString())
         if(result.toString() == "false"){
                 message = "Asset existed";
@@ -204,7 +204,7 @@ app.post('/api/asset/add', async function (req, res) {
 
 app.get('/api/queryassetowned', async function (req, res) {
         try {
-            var networkObj = await getNetwork(req.orgname, req.username);
+            var networkObj = await getNetwork(req.orgid, req.username);
             const result = await networkObj.contract.evaluateTransaction('queryAssetByOwner', req.username);
             var message;
             if(result.toString() != "[]"){
@@ -223,7 +223,7 @@ app.get('/api/queryassetowned', async function (req, res) {
     
 app.get('/api/asset/detail/:asset_index', async function (req, res) {
     try {
-        var networkObj = await getNetwork(req.orgname, req.username);
+        var networkObj = await getNetwork(req.orgid, req.username);
 
         var resultBuf = await networkObj.contract.submitTransaction('queryAsset', req.params.asset_index);
         var result= JSON.parse(resultBuf.toString())
@@ -244,7 +244,7 @@ app.get('/api/asset/detail/:asset_index', async function (req, res) {
 
 app.get('/api/asset/history/:asset_index', async function (req, res) {
     try {
-        var networkObj = await getNetwork(req.orgname, req.username);
+        var networkObj = await getNetwork(req.orgid, req.username);
 
         var resultBuf = await networkObj.contract.submitTransaction('queryAssetHistory', req.params.asset_index, "");
         var result= JSON.parse(resultBuf.toString())
@@ -273,7 +273,7 @@ app.post('/api/purchaseorder/add/:order_index', async function (req, res) {
         todayDateTime.getMinutes().padLeft(),
         todayDateTime.getSeconds().padLeft()].join(':');
 
-        var networkObj = await getNetwork(req.orgname, req.username);
+        var networkObj = await getNetwork(req.orgid, req.username);
 
         var result = await networkObj.contract.submitTransaction('createPurchaseOrder', req.params.order_index, req.body.owner, req.body.quantity, timestamp);
         
@@ -303,7 +303,7 @@ app.put('/api/purchaseorder/update/:order_index', async function (req, res) {
         todayDateTime.getMinutes().padLeft(),
         todayDateTime.getSeconds().padLeft()].join(':');
 
-        var networkObj = await getNetwork(req.orgname, req.username);
+        var networkObj = await getNetwork(req.orgid, req.username);
 
         var result = await networkObj.contract.submitTransaction('updatePurchaseOrderStatus', req.params.order_index, req.body.updateby, timestamp, req.body.approve);
         
@@ -333,7 +333,7 @@ app.post('/api/repairorder/add/:order_index', async function (req, res) {
         todayDateTime.getMinutes().padLeft(),
         todayDateTime.getSeconds().padLeft()].join(':');
 
-        var networkObj = await getNetwork(req.orgname, req.username);
+        var networkObj = await getNetwork(req.orgid, req.username);
 
         var result = await networkObj.contract.submitTransaction('createRepairOrder', req.params.order_index, req.body.owner, timestamp);
         
@@ -363,7 +363,7 @@ app.put('/api/repairorder/update/:order_index', async function (req, res) {
         todayDateTime.getMinutes().padLeft(),
         todayDateTime.getSeconds().padLeft()].join(':');
 
-        var networkObj = await getNetwork(req.orgname, req.username);
+        var networkObj = await getNetwork(req.orgid, req.username);
 
         var result = await networkObj.contract.submitTransaction('updateRepairOrderStatus', req.params.order_index, req.body.updateby, timestamp, req.body.approve);
         var message;
@@ -384,7 +384,7 @@ app.put('/api/repairorder/update/:order_index', async function (req, res) {
 
 app.put('/api/asset/transfer/:asset_index', async function (req, res) {
     try {
-        var networkObj = await getNetwork(req.orgname, req.username);
+        var networkObj = await getNetwork(req.orgid, req.username);
 
         var resultBuf = await networkObj.contract.submitTransaction('transferAssetOwner', req.params.asset_index, req.body.owner, timestamp);
         var result= JSON.parse(resultBuf.toString())
@@ -411,7 +411,7 @@ app.put('/api/asset/update/:asset_index', async function (req, res) {
         todayDateTime.getMinutes().padLeft(),
         todayDateTime.getSeconds().padLeft()].join(':');
 
-        var networkObj = await getNetwork(req.orgname, req.username);
+        var networkObj = await getNetwork(req.orgid, req.username);
         var resultBuf = await networkObj.contract.submitTransaction('updateAssetAPI', req.params.asset_index, req.body.name, req.body.number, req.body.status, req.body.quantity, req.body.weight, timestamp, req.username, "");
         var result= JSON.parse(resultBuf.toString())
         if(result.Status == false){
@@ -437,7 +437,7 @@ app.put('/api/asset/airline/update/:asset_index', async function (req, res) {
         todayDateTime.getMinutes().padLeft(),
         todayDateTime.getSeconds().padLeft()].join(':');
 
-        var networkObj = await getNetwork(req.orgname, req.username);
+        var networkObj = await getNetwork(req.orgid, req.username);
         var resultBuf = await networkObj.contract.submitTransaction('updateAirlineAsset', req.params.asset_index, req.body.flightLog, req.body.nextOverhaul, req.body.totalHours, req.body.status, req.username, timestamp);
         var result= JSON.parse(resultBuf.toString())
         if(result.Status == false){
@@ -455,7 +455,7 @@ app.put('/api/asset/airline/update/:asset_index', async function (req, res) {
 
 app.post('/api/signin/', async function (req, res) {
         try {
-            var networkObjQuery = await getNetwork("manufacturer", "admin");
+            var networkObjQuery = await getNetwork("cirbus", "admin");
             var resultBuf = await networkObjQuery.contract.evaluateTransaction('queryUserByEmail', req.body.email);
             var result= JSON.parse(resultBuf.toString());
             await networkObjQuery.gateway.disconnect();
@@ -465,7 +465,7 @@ app.post('/api/signin/', async function (req, res) {
                 res.status(400).json({response: message});
             } else {
                 console.log(result.Record);
-                var networkObj = await getNetwork(result.Record.Org, req.username);
+                var networkObj = await getNetwork(result.Record.Org.ID, req.username);
                     
                 var resultBuf2 = await networkObj.contract.submitTransaction('signIn', req.body.email, req.body.password);
                 var result2= JSON.parse(resultBuf2.toString())
@@ -478,7 +478,9 @@ app.post('/api/signin/', async function (req, res) {
                     var token = jwt.sign({
                             exp: Math.floor(Date.now() / 1000) + 30000,
                             username: req.body.email,
-                            orgName: result.Record.Org,
+                            orgID: result.Record.Org.ID,
+                            orgName: result.Record.Org.Name,
+                            orgType: result.Record.Org.Type, 
                             role: result.Record.Role
                         }, app.get('secret'));                
                     message = req.body.email + ' signed in using ' + token;
@@ -541,13 +543,13 @@ app.get('/api/initdata', async function (req, res)  {
     try {
         var timestamp = getTimestamp();
 
-        var networkObj = await getNetwork("manufacturer", "admin");
+        var networkObj = await getNetwork("cirbus", "admin");
         
         var users = [
-            ["Payo", "payo@gmail.com", "manufacturer", "supervisor", "Cilegon", "payo"],
-            ["Chris", "chris@gmail.com", "vendor", "supervisor", "Daan Mogot", "chris"],
-            ["Nadim", "nadim@gmail.com", "mro", "supervisor", "Pamulang", "nadim"],
-            ["Christest", "christest@gmail.com", "airline", "supervisor", "Test", "123"],
+            ["Payo", "payo@gmail.com", "cirbus", "supervisor", "Cilegon", "payo"],
+            ["Chris", "chris@gmail.com", "nataair", "supervisor", "Daan Mogot", "chris"],
+            ["Nadim", "nadim@gmail.com", "cengkarengairwayengineering", "supervisor", "Pamulang", "nadim"],
+            ["Christest", "christest@gmail.com", "aviparairline", "supervisor", "Test", "123"],
         ]
         for (var user of users){
             await networkObj.contract.submitTransaction('createUser', user[0], user[1], user[2], user[3], user[4], user[5]);
@@ -565,15 +567,21 @@ app.get('/api/initdata', async function (req, res)  {
         }
 
         var timestamp = getTimestamp();
+        console.log("PO 1 Create");
         await networkObj.contract.submitTransaction('createPurchaseOrder', "ASSET1", "chris@gmail.com", 5, timestamp);
+        console.log("PO 1 Updddate");
         await networkObj.contract.submitTransaction('updatePurchaseOrderStatus', "PO1", "payo@gmail.com", timestamp, true);
 
         var timestamp = getTimestamp();
+        console.log("PO 2 Create");
         await networkObj.contract.submitTransaction('createPurchaseOrder', "ASSET3", "nadim@gmail.com", 5, timestamp);
+        console.log("PO 2 Update");
         await networkObj.contract.submitTransaction('updatePurchaseOrderStatus', "PO2", "chris@gmail.com", timestamp, true);
 
         var timestamp = getTimestamp();
+        console.log("PO 3 Create");
         await networkObj.contract.submitTransaction('createPurchaseOrder', "ASSET4", "christest@gmail.com", 2, timestamp);
+        console.log("PO 3 Update");
         await networkObj.contract.submitTransaction('updatePurchaseOrderStatus', "PO3", "nadim@gmail.com", timestamp, true);
         
         console.log("Init data success");

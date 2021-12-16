@@ -12,14 +12,22 @@ const path = require('path');
 
 const getCCP = async (org) => {
     let ccpPath;
-    if (org == "manufacturer") {
-        ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'manufacturer.example.com', 'connection-manufacturer.json');
-    } else if (org == "vendor") {
-        ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'vendor.example.com', 'connection-vendor.json');
-    } else if (org == "airline") {
-        ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'airline.example.com', 'connection-airline.json');
-    } else if (org == "mro") {
-        ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'mro.example.com', 'connection-mro.json');
+    if (org == "cirbus") {
+        ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'cirbus.example.com', 'connection-cirbus.json');
+    } else if (org == "soeing") {
+        ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'soeing.example.com', 'connection-soeing.json');
+    } else if (org == "nataair") {
+        ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'nataair.example.com', 'connection-nataair.json');
+    } else if (org == "lycanairsa") {
+        ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'lycanairsa.example.com', 'connection-lycanairsa.json');
+    } else if (org == "cengkarengairwayengineering") {
+        ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'cengkarengairwayengineering.example.com', 'connection-cengkarengairwayengineering.json');
+    } else if (org == "semco") {
+        ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'semco.example.com', 'connection-semco.json');
+    } else if (org == "aviparairline") {
+        ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'aviparairline.example.com', 'connection-aviparairline.json');
+    } else if (org == "pamulangairway") {
+        ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'pamulangairway.example.com', 'connection-pamulangairway.json');
     } else {
         return null
     }
@@ -29,14 +37,22 @@ const getCCP = async (org) => {
 
 const getCaInfo = async (org) => {
     let caInfo
-    if (org == "manufacturer") {
-        caInfo = ccp.certificateAuthorities['ca.orgManufacturer.example.com'];
-    } else if (org == "vendor") {
-        caInfo = ccp.certificateAuthorities['ca.orgVendor.example.com'];
-    } else if (org == "airline") {
-        caInfo = ccp.certificateAuthorities['ca.orgAirline.example.com'];
-    } else if (org == "mro") {
-        caInfo = ccp.certificateAuthorities['ca.orgMRO.example.com'];
+    if (org == "cirbus") {
+        caInfo = ccp.certificateAuthorities['ca.orgCirbus.example.com'];
+    } else if (org == "soeing") {
+        caInfo = ccp.certificateAuthorities['ca.orgSoeing.example.com'];
+    } else if (org == "nataair") {
+        caInfo = ccp.certificateAuthorities['ca.orgNataAir.example.com'];
+    } else if (org == "lycanairsa") {
+        caInfo = ccp.certificateAuthorities['ca.orgLycanAirSA.example.com'];
+    } else if (org == "cengkarengairwayengineering") {
+        caInfo = ccp.certificateAuthorities['ca.orgCengkarengAirwayEngineering.example.com'];
+    } else if (org == "semco") {
+        caInfo = ccp.certificateAuthorities['ca.orgSemco.example.com'];
+    } else if (org == "aviparairline") {
+        caInfo = ccp.certificateAuthorities['ca.orgAviparAirline.example.com'];
+    } else if (org == "pamulangairway") {
+        caInfo = ccp.certificateAuthorities['ca.orgPamulangAirway.example.com'];
     } else
         return null
     return caInfo
@@ -45,16 +61,23 @@ const getCaInfo = async (org) => {
 
 const getCaUrl = async (org, ccp) => {
     let caURL;
-    if (org == "manufacturer") {
-        caURL = ccp.certificateAuthorities['ca.orgManufacturer.example.com'].url;
-    } else if (org == "vendor") {
-        caURL = ccp.certificateAuthorities['ca.orgVendor.example.com'].url;
-    } else if (org == "airline") {
-        caURL = ccp.certificateAuthorities['ca.orgAirline.example.com'].url;
-    } else if (org == "mro") {
-        caURL = ccp.certificateAuthorities['ca.orgMRO.example.com'].url;
-    } 
-    else{
+    if (org == "cirbus") {
+        caURL = ccp.certificateAuthorities['ca.orgCirbus.example.com'].url;
+    } else if (org == "soeing") {
+        caURL = ccp.certificateAuthorities['ca.orgSoeing.example.com'].url;
+    } else if (org == "nataair") {
+        caURL = ccp.certificateAuthorities['ca.orgNataAir.example.com'].url;
+    } else if (org == "lycanairsa") {
+        caURL = ccp.certificateAuthorities['ca.orgLycanAirSA.example.com'].url;
+    } else if (org == "cengkarengairwayengineering") {
+        caURL = ccp.certificateAuthorities['ca.orgCengkarengAirwayEngineering.example.com'].url;
+    } else if (org == "semco") {
+        caURL = ccp.certificateAuthorities['ca.orgSemco.example.com'].url;
+    } else if (org == "aviparairline") {
+        caURL = ccp.certificateAuthorities['ca.orgAviparAirline.example.com'].url;
+    } else if (org == "pamulangairway") {
+        caURL = ccp.certificateAuthorities['ca.orgPamulangAirway.example.com'].url;
+    } else{
         return null
     }
     return caURL
@@ -62,14 +85,22 @@ const getCaUrl = async (org, ccp) => {
 
 const getWalletPath = async (org) => {
     let walletPath;
-    if (org == "manufacturer") {
-        walletPath = path.join(process.cwd(), 'orgManufacturer-wallet');
-    } else if (org == "vendor") {
-        walletPath = path.join(process.cwd(), 'orgVendor-wallet');
-    } else if (org == "airline") {
-        walletPath = path.join(process.cwd(), 'orgAirline-wallet');
-    } else if (org == "mro") {
-        walletPath = path.join(process.cwd(), 'orgMRO-wallet');
+    if (org == "cirbus") {
+        walletPath = path.join(process.cwd(), 'orgCirbus-wallet');
+    } else if (org == "soeing") {
+        walletPath = path.join(process.cwd(), 'orgSoeing-wallet');
+    } else if (org == "nataair") {
+        walletPath = path.join(process.cwd(), 'orgNataAir-wallet');
+    } else if (org == "lycanairsa") {
+        walletPath = path.join(process.cwd(), 'orgLycanAirSA-wallet');
+    } else if (org == "cengkarengairwayengineering") {
+        walletPath = path.join(process.cwd(), 'orgCengkarengAirwayEngineering-wallet');
+    } else if (org == "semco") {
+        walletPath = path.join(process.cwd(), 'orgSemco-wallet');
+    } else if (org == "aviparairline") {
+        walletPath = path.join(process.cwd(), 'orgAviparAirline-wallet');
+    } else if (org == "pamulangairway") {
+        walletPath = path.join(process.cwd(), 'orgPamulangAirway-wallet');
     } else
         return null
     return walletPath
@@ -77,14 +108,22 @@ const getWalletPath = async (org) => {
 
 const getAffiliation = async (org) => {
     let affiliation;
-    if (org == "manufacturer") {
-        affiliation = 'manufacturer.department1';
-    } else if (org == "vendor") {
-        affiliation = 'vendor.department1';
-    } else if (org == "airline") {
-        affiliation = 'airline.department1';
-    } else if (org == "mro") {
-        affiliation = 'mro.department1';
+    if (org == "cirbus") {
+        affiliation = 'cirbus.department1';
+    } else if (org == "soeing") {
+        affiliation = 'soeing.department1';
+    } else if (org == "nataair") {
+        affiliation = 'nataair.department1';
+    } else if (org == "lycanairsa") {
+        affiliation = 'lycanairrsa.department1';
+    } else if (org == "cengkarengairwayengineering") {
+        affiliation = 'cengkarengairwayengineering.department1';
+    } else if (org == "semco") {
+        affiliation = 'semco.department1';
+    } else if (org == "aviparairline") {
+        affiliation = 'aviparairline.department1';
+    } else if (org == "pamulangairway") {
+        affiliation = 'pamulangairway.department1';
     } else
         return null
     return affiliation;
@@ -93,14 +132,22 @@ const getAffiliation = async (org) => {
 
 const getMSP = async (org) => {
     let msp;
-    if (org == "manufacturer") {
-        msp = 'ManufacturerMSP';
-    } else if (org == "vendor") {
-        msp = 'VendorMSP';
-    } else if (org == "airline") {
-        msp = 'AirlineMSP';
-    } else if (org == "mro") {
-        msp = 'MROMSP' ;
+    if (org == "cirbus") {
+        msp = 'CirbusMSP';
+    } else if (org == "soeing") {
+        msp = 'SoeingMSP';
+    } else if (org == "nataair") {
+        msp = 'NataAirMSP';
+    } else if (org == "lycanairsa") {
+        msp = 'LycanAirSAMSP' ;
+    } else if (org == "cengkarengairwayengineering") {
+        msp = 'CengkarengAirwayEngineeringMSP';
+    } else if (org == "semco") {
+        msp = 'SemcoMSP';
+    } else if (org == "aviparairline") {
+        msp = 'AviparAirlineMSP' ;
+    } else if (org == "pamulangairway") {
+        msp = 'PamulangAirwayMSP';
     } else
         return null
     return msp;

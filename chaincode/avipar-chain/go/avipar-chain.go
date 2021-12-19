@@ -252,7 +252,7 @@ func (s *SmartContract) InitCounters(ctx contractapi.TransactionContextInterface
 }
 
 func (s *SmartContract) InitOrganization(ctx contractapi.TransactionContextInterface) error {
-	orgArray := [8]Organization {
+	orgArray := [9]Organization {
 		{
 			ID: "cirbus",
 			Name: "Cirbus",
@@ -293,8 +293,13 @@ func (s *SmartContract) InitOrganization(ctx contractapi.TransactionContextInter
 			Name: "PamulangAirway",
 			Type: "airline",
 		},
+		{
+			ID: "admin",
+			Name: "Admin",
+			Type: "admin",
+		},
 	}
-	for i := 0; i < 8; i++ {
+	for i := 0; i < 9; i++ {
 		orgAsBytes, _ := json.Marshal(orgArray[i])
 		ctx.GetStub().PutState(orgArray[i].ID, orgAsBytes)
 	}
@@ -912,8 +917,8 @@ func (s *SmartContract) QueryAllUsers(ctx contractapi.TransactionContextInterfac
 	userCounter := getCounter(ctx, "UserCounterNo")
 	userCounter++
 
-	startKey := "USER0"
-	endKey := "USER" + strconv.Itoa(userCounter)
+	startKey := "USER2"
+	endKey := "USER" + strconv.Itoa(getMaxNumber(userCounter))
 
 	resultsIterator, err := ctx.GetStub().GetStateByRange(startKey, endKey)
 
@@ -1160,12 +1165,12 @@ func (s *SmartContract) UpdateAsset(ctx contractapi.TransactionContextInterface,
 		if newOwnerOrg.Type == "airline"{
 			assetCounter := getCounter(ctx, "AssetCounterNo")
 			for i := 0; i < tempQuantity; i++ {
-    			s.CreateAsset(ctx, asset.Number, asset.Name, newOwner, 1, asset.Weight, timestamp, assetId, poReference, roReference, assetCounter, asset.CreateDate)
+    			s.CreateAsset(ctx, asset.Number, asset.Name, newOwner, 1, asset.Weight, timestamp, assetId, poReference, roReference, assetCounter, timestamp)
 				assetCounter++
 			}
 			s.incrementCounter(ctx, "AssetCounterNo", assetCounter)
 		} else{
-			s.CreateAsset(ctx, asset.Number, asset.Name, newOwner, tempQuantity, asset.Weight, timestamp, assetId, poReference, roReference, -1, asset.CreateDate)
+			s.CreateAsset(ctx, asset.Number, asset.Name, newOwner, tempQuantity, asset.Weight, timestamp, assetId, poReference, roReference, -1, timestamp)
 		}
 	}
 	
@@ -1242,6 +1247,25 @@ func (s *SmartContract) CreateUser(ctx contractapi.TransactionContextInterface, 
 		return true, errPut;
 	}
 }
+
+func (s *SmartContract) UpdateUserRole(ctx contractapi.TransactionContextInterface, userId string,role string) (*QueryResultStatusMessage, error) {
+	result := QueryResultStatusMessage{}
+	result.Status = false;
+
+	userAsBytes, _ := ctx.GetStub().GetState(userId)
+	user := new(User)
+	_ = json.Unmarshal(userAsBytes, user)
+	
+	user.Role = role
+	userAsBytesUpdate, _ := json.Marshal(user)
+
+	ctx.GetStub().PutState(userId, userAsBytesUpdate)
+
+	result.Message = "Role for  " + user.Email +  " updated" 
+	result.Status = true
+	return &result, nil
+}
+
 
 func main() {
 

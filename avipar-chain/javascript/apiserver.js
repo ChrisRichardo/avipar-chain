@@ -56,6 +56,7 @@ async function getNetwork(org, user){
 app.use((req, res, next) => {
         if (req.originalUrl.indexOf('/api/createuser') >= 0 || req.originalUrl.indexOf('/api/signin') >= 0 || req.originalUrl.indexOf('/api/queryallusers') >= 0 || req.originalUrl.indexOf('/api/initdata') >= 0) {
                 req.username = "admin";
+                req.orgid = "cirbus"
                 return next();
         }
         var token = req.token;
@@ -72,6 +73,10 @@ app.use((req, res, next) => {
             } else {
                 req.username = decoded.username;
                 req.orgid = decoded.orgID;
+                if (req.orgid == "admin"){
+                    req.username= "admin"
+                    req.orgid = "cirbus"
+                }
                 console.log('Decoded from JWT token: username - ' + decoded.username + ', orgname - ' + decoded.orgName);
                 return next();
             }
@@ -80,7 +85,7 @@ app.use((req, res, next) => {
 
 app.get('/api/queryallusers', async function (req, res)  {
         try {         
-            var networkObj = await getNetwork(req.body.org, req.username);
+            var networkObj = await getNetwork(req.orgid, req.username);
 
             const result = await networkObj.contract.evaluateTransaction('queryAllUsers');
             console.log(JSON.parse(result));
@@ -335,7 +340,7 @@ app.post('/api/repairorder/add/:order_index', async function (req, res) {
 
         var networkObj = await getNetwork(req.orgid, req.username);
 
-        var result = await networkObj.contract.submitTransaction('createRepairOrder', req.params.order_index, req.body.owner, timestamp);
+        var result = await networkObj.contract.submitTransaction('createRepairOrder', req.params.order_index, req.body.owner, "cengkarengairwayengineering" ,timestamp);
         
         var message;
         if(result.toString() == "false"){
@@ -464,8 +469,12 @@ app.post('/api/signin/', async function (req, res) {
                 message = "User not existed"
                 res.status(400).json({response: message});
             } else {
+                if (result.Record.Org.ID == "admin"){
+                    var networkObj = await getNetwork("cirbus", "admin");
+                } else{
+                    var networkObj = await getNetwork(result.Record.Org.ID, req.username);
+                }
                 console.log(result.Record);
-                var networkObj = await getNetwork(result.Record.Org.ID, req.username);
                     
                 var resultBuf2 = await networkObj.contract.submitTransaction('signIn', req.body.email, req.body.password);
                 var result2= JSON.parse(resultBuf2.toString())
@@ -520,6 +529,24 @@ app.post('/api/createuser/', async function (req, res) {
         }
 })
 
+app.put('/api/user/update/:user_index', async function (req, res) {
+    try {
+        var networkObj = await getNetwork(req.orgid, req.username);
+        var resultBuf = await networkObj.contract.submitTransaction('updateUserRole', req.params.user_index, req.body.role);
+        var result= JSON.parse(resultBuf.toString())
+        if(result.Status == false){
+            res.status(400).json({response: result.Message});
+        } else{        
+            res.status(200).json({response: result.Message});
+        }
+        console.log(result.Message);
+        await networkObj.gateway.disconnect();
+} catch (error) {
+        console.error(`Failed to submit transaction: ${error}`);
+        process.exit(1);
+    } 
+})
+
 app.get('/api/user/:user_email', async function (req, res) {
         try {
             var networkObj = await getNetwork();
@@ -546,6 +573,7 @@ app.get('/api/initdata', async function (req, res)  {
         var networkObj = await getNetwork("cirbus", "admin");
         
         var users = [
+            ["Admin", "admin@admin.com", "admin", "admin", "admin", "adminpw"],
             ["Payo", "payo@gmail.com", "cirbus", "supervisor", "Cilegon", "payo"],
             ["Chris", "chris@gmail.com", "nataair", "supervisor", "Daan Mogot", "chris"],
             ["Nadim", "nadim@gmail.com", "cengkarengairwayengineering", "supervisor", "Pamulang", "nadim"],
@@ -553,7 +581,9 @@ app.get('/api/initdata', async function (req, res)  {
         ]
         for (var user of users){
             await networkObj.contract.submitTransaction('createUser', user[0], user[1], user[2], user[3], user[4], user[5]);
-            await helper.registerUser(user[1], user[2]);
+            if (user[0] != "Admin"){
+                await helper.registerUser(user[1], user[2]);
+            }
         }
          
         var assets = [
@@ -593,13 +623,13 @@ app.get('/api/initdata', async function (req, res)  {
 
         var timestamp = getTimestamp();
         console.log("PO 2 Create");
-        await networkObj.contract.submitTransaction('createPurchaseOrder', "ASSET6", "nadim@gmail.com", 5, timestamp);
+        await networkObj.contract.submitTransaction('createPurchaseOrder', "ASSET8", "nadim@gmail.com", 5, timestamp);
         console.log("PO 2 Update");
         await networkObj.contract.submitTransaction('updatePurchaseOrderStatus', "PO5", "chris@gmail.com", timestamp, true);
 
         var timestamp = getTimestamp();
         console.log("PO 3 Create");
-        await networkObj.contract.submitTransaction('createPurchaseOrder', "ASSET7", "christest@gmail.com", 2, timestamp);
+        await networkObj.contract.submitTransaction('createPurchaseOrder', "ASSET9", "christest@gmail.com", 2, timestamp);
         console.log("PO 3 Update");
         await networkObj.contract.submitTransaction('updatePurchaseOrderStatus', "PO6", "nadim@gmail.com", timestamp, true);
 

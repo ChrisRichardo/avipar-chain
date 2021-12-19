@@ -185,7 +185,7 @@ app.post('/api/asset/add', async function (req, res) {
 
         var networkObj = await getNetwork(req.orgid, req.username);
 
-        var resultBuf = await networkObj.contract.submitTransaction('createAssetAPI', req.body.number, req.body.name, req.username, req.body.quantity, req.body.weight, timestamp, "", "");
+        var resultBuf = await networkObj.contract.submitTransaction('createAssetAPI', req.body.number, req.body.name, req.username, req.body.quantity, req.body.weight, timestamp, "");
         var result= JSON.parse(resultBuf.toString())
         if(result.toString() == "false"){
                 message = "Asset existed";
@@ -555,15 +555,16 @@ app.get('/api/initdata', async function (req, res)  {
             await networkObj.contract.submitTransaction('createUser', user[0], user[1], user[2], user[3], user[4], user[5]);
             await helper.registerUser(user[1], user[2]);
         }
-        
+         
         var assets = [
             ["SPR001", "Buntut", "payo@gmail.com", 10, 2],
             ["SPR002", "Ekor", "payo@gmail.com", 50, 5],
+            ["SPR003", "EkorA", "payo@gmail.com", 50, 5],
         ]
         for (var asset of assets){
             var timestamp = getTimestamp();
             console.log(asset);
-            await networkObj.contract.submitTransaction('createAssetAPI', asset[0], asset[1], asset[2], asset[3], asset[4], timestamp, "", "");
+            await networkObj.contract.submitTransaction('createAssetAPI', asset[0], asset[1], asset[2], asset[3], asset[4], timestamp, "");
         }
 
         var timestamp = getTimestamp();
@@ -574,16 +575,34 @@ app.get('/api/initdata', async function (req, res)  {
 
         var timestamp = getTimestamp();
         console.log("PO 2 Create");
-        await networkObj.contract.submitTransaction('createPurchaseOrder', "ASSET3", "nadim@gmail.com", 5, timestamp);
+        await networkObj.contract.submitTransaction('createPurchaseOrder', "ASSET4", "nadim@gmail.com", 5, timestamp);
         console.log("PO 2 Update");
         await networkObj.contract.submitTransaction('updatePurchaseOrderStatus', "PO2", "chris@gmail.com", timestamp, true);
 
         var timestamp = getTimestamp();
         console.log("PO 3 Create");
-        await networkObj.contract.submitTransaction('createPurchaseOrder', "ASSET4", "christest@gmail.com", 2, timestamp);
+        await networkObj.contract.submitTransaction('createPurchaseOrder', "ASSET5", "christest@gmail.com", 2, timestamp);
         console.log("PO 3 Update");
         await networkObj.contract.submitTransaction('updatePurchaseOrderStatus', "PO3", "nadim@gmail.com", timestamp, true);
-        
+
+        var timestamp = getTimestamp();
+        console.log("PO 1 Create");
+        await networkObj.contract.submitTransaction('createPurchaseOrder', "ASSET3", "chris@gmail.com", 5, timestamp);
+        console.log("PO 1 Updddate");
+        await networkObj.contract.submitTransaction('updatePurchaseOrderStatus', "PO4", "payo@gmail.com", timestamp, true);
+
+        var timestamp = getTimestamp();
+        console.log("PO 2 Create");
+        await networkObj.contract.submitTransaction('createPurchaseOrder', "ASSET6", "nadim@gmail.com", 5, timestamp);
+        console.log("PO 2 Update");
+        await networkObj.contract.submitTransaction('updatePurchaseOrderStatus', "PO5", "chris@gmail.com", timestamp, true);
+
+        var timestamp = getTimestamp();
+        console.log("PO 3 Create");
+        await networkObj.contract.submitTransaction('createPurchaseOrder', "ASSET7", "christest@gmail.com", 2, timestamp);
+        console.log("PO 3 Update");
+        await networkObj.contract.submitTransaction('updatePurchaseOrderStatus', "PO6", "nadim@gmail.com", timestamp, true);
+
         console.log("Init data success");
         res.status(200).json({response: "Init data success"});
         await networkObj.gateway.disconnect();

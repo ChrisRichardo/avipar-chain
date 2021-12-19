@@ -154,6 +154,18 @@ type QueryResultStatusMessage struct {
 	Status bool `json:"Status"`
 }
 
+func getMaxNumber(n int) int{
+    max := 1
+    for {
+        max = max * 10
+         n = n / 10
+         if n == 0 {
+          break
+        }  
+    }
+    return max - 1
+}
+
 //getCounter to the latest value of the counter based on the Asset Type provided as input parameter
 func getCounter(ctx contractapi.TransactionContextInterface, AssetType string) int {
 	counterAsBytes, _ := ctx.GetStub().GetState(AssetType)
@@ -633,8 +645,8 @@ func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface,
 	}
 }
 
-func (s *SmartContract) CreateAssetAPI(ctx contractapi.TransactionContextInterface, number string, name string, owner string, quantity int, weight int,timestamp string, previousAsset string, createDate string) (bool, error) {
-	return s.CreateAsset(ctx, number, name, owner, quantity, weight, previousAsset, timestamp, nil, nil, -1, createDate);
+func (s *SmartContract) CreateAssetAPI(ctx contractapi.TransactionContextInterface, number string, name string, owner string, quantity int, weight int,timestamp string, previousAsset string) (bool, error) {
+	return s.CreateAsset(ctx, number, name, owner, quantity, weight, previousAsset, timestamp, nil, nil, -1, timestamp);
 }
 
 func (s *SmartContract) QueryRO(ctx contractapi.TransactionContextInterface, roId string) (*QueryResultRO, error) {
@@ -682,7 +694,7 @@ func (s *SmartContract) QueryAllRO(ctx contractapi.TransactionContextInterface) 
 	assetCounter++
 
 	startKey := "RO0"
-	endKey := "RO" + strconv.Itoa(assetCounter)
+	endKey := "RO" + strconv.Itoa(getMaxNumber(assetCounter))
 
 	resultsIterator, _ := ctx.GetStub().GetStateByRange(startKey, endKey)
 
@@ -707,7 +719,7 @@ func (s *SmartContract) QueryAllPO(ctx contractapi.TransactionContextInterface) 
 	assetCounter++
 
 	startKey := "PO0"
-	endKey := "PO" + strconv.Itoa(assetCounter)
+	endKey := "PO" + strconv.Itoa(getMaxNumber(assetCounter))
 
 	resultsIterator, _ := ctx.GetStub().GetStateByRange(startKey, endKey)
 
@@ -778,12 +790,12 @@ func (s *SmartContract) QueryAllAssets(ctx contractapi.TransactionContextInterfa
 	assetCounter++
 
 	startKey := "ASSET0"
-	endKey := "ASSET" + strconv.Itoa(assetCounter)
+	endKey := "ASSET" + strconv.Itoa(getMaxNumber(assetCounter))
 
 	resultsIterator, _ := ctx.GetStub().GetStateByRange(startKey, endKey)
 
 	startQtyKey := "ASSETQTYASSET0"
-	endQtyKey := "ASSETQTYASSET" + strconv.Itoa(assetCounter)
+	endQtyKey := "ASSETQTYASSET" + strconv.Itoa(getMaxNumber(assetCounter))
 
 	resultsQtyIterator, err := ctx.GetStub().GetStateByRange(startQtyKey, endQtyKey)
 

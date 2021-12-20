@@ -104,6 +104,7 @@ app.get('/api/queryallassets', async function (req, res)  {
 
             const result = await networkObj.contract.evaluateTransaction('queryAllAssets');
             console.log(JSON.parse(result));
+            
             console.log(`Transaction has been evaluated, result is: ${result.toString()}`);
             res.status(200).json({response: result.toString()});
     } catch (error) {
@@ -587,9 +588,9 @@ app.get('/api/initdata', async function (req, res)  {
         }
          
         var assets = [
-            ["SPR001", "Buntut", "payo@gmail.com", 10, 2],
-            ["SPR002", "Ekor", "payo@gmail.com", 50, 5],
-            ["SPR003", "EkorA", "payo@gmail.com", 50, 5],
+            ["SPR001", "Bearing", "payo@gmail.com", 10, 2],
+            ["SPR002", "Spacer", "payo@gmail.com", 50, 5],
+            ["SPR003", "Cable M12", "payo@gmail.com", 50, 5],
         ]
         for (var asset of assets){
             var timestamp = getTimestamp();

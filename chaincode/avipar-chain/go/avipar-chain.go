@@ -32,6 +32,9 @@ type Asset struct {
 	Timestamp        string `json:"Timestamp"`
 	Quantity         int    `json:"Quantity"`
 	Weight           int    `json:"Weight"`
+	PictureUrl       string `json:"PictureUrl"`
+	Description      string `json:"Description"`
+	Category         AssetCategory `json:"Category"` 
 	Org       	     Organization `json:"Org"` 
 	FlightLog	     string `json:"FlightLog"` 
 	NextOverhaul	 string `json:"NextOverhaul"` 
@@ -39,6 +42,11 @@ type Asset struct {
 	PurchaseOrderReference    *PurchaseOrder `json:"PurchaseOrderReference"`
 	RepairOrderReference      *RepairOrder `json:"RepairOrderReference"`
 	PreviousAsset    string `json:"PreviousAsset"`
+}
+
+type AssetCategory struct {
+	ID             	 string `json:"ID"`
+	Name 	 		 string `json:"Name"`
 }
 
 type AssetAvailableQty struct {
@@ -105,6 +113,13 @@ type QueryResultAssetHistory struct {
 type QueryResultAssetQty struct {
 	Key    string `json:"Key"`
 	Record *AssetAvailableQty
+	Message string `json:"Message"`
+	Status bool `json:"Status"`
+}
+
+type QueryResultCategory struct {
+	Key    string `json:"Key"`
+	Record *AssetCategory
 	Message string `json:"Message"`
 	Status bool `json:"Status"`
 }
@@ -247,6 +262,10 @@ func (s *SmartContract) InitCounters(ctx contractapi.TransactionContextInterface
 	var InvoiceCounter = CounterNo{Counter: 0}
 	InvoiceCounterBytes, _ := json.Marshal(InvoiceCounter)
 	ctx.GetStub().PutState("INVCounterNo", InvoiceCounterBytes)
+
+	var CategoryCounter = CounterNo{Counter: 0}
+	CategoryCounterBytes, _ := json.Marshal(CategoryCounter)
+	ctx.GetStub().PutState("CategoryCounterNo", CategoryCounterBytes)
 
 	return nil
 }
@@ -402,7 +421,7 @@ func (s *SmartContract) UpdatePurchaseOrderStatus(ctx contractapi.TransactionCon
 		} else if po.Status == "Waiting for Seller Organization" && user.Org.ID == updateUser.Org.ID {
 			po.InvoiceReferenceNo = s.CreateInvoice(ctx)
 			po.Status = "Completed"
-			s.UpdateAsset(ctx, asset.ID, asset.Name, asset.Number, asset.Status, po.Quantity, asset.Weight, timestamp, updateBy, buyer.Email, po, nil)
+			s.UpdateAsset(ctx, asset.ID, asset.Name, asset.Number, asset.Status, po.Quantity, asset.Weight, timestamp, updateBy, buyer.Email, po, nil, asset.Description)
 		
 			po.AssetID = asset.ID
 			po.AssetName = asset.Name
@@ -485,7 +504,7 @@ func (s *SmartContract) CreateRepairOrder(ctx contractapi.TransactionContextInte
 	value := []byte{0x00}
 	ctx.GetStub().PutState(indexKey, value)
 
-	s.UpdateAsset(ctx, assetId, "", "", "Requesting Repair", -1, -1, timestamp, email, "", nil, &ro)
+	s.UpdateAsset(ctx, assetId, "", "", "Requesting Repair", -1, -1, timestamp, email, "", nil, &ro, asset.Description)
 
 	s.incrementCounter(ctx, "ROCounterNo", -1)
 	
@@ -522,7 +541,7 @@ func (s *SmartContract) UpdateRepairOrderStatus(ctx contractapi.TransactionConte
 		if ro.Status == "Waiting for Requester Organization" && requester.Org.ID == updateUser.Org.ID {
 			ro.Status = "Waiting for Repairer Organization"
 		} else if ro.Status == "Waiting for Repairer Organization" && ro.RepairerOrg.ID == updateUser.Org.ID {
-			s.UpdateAsset(ctx, asset.ID, asset.Name, asset.Number, "Repairing", asset.Quantity, asset.Weight, timestamp, updateBy, "", nil, ro)
+			s.UpdateAsset(ctx, asset.ID, asset.Name, asset.Number, "Repairing", asset.Quantity, asset.Weight, timestamp, updateBy, "", nil, ro, asset.Description)
 			ro.Status = "Repairing"
 		} else if ro.Status == "Repairing" && ro.RepairerOrg.ID == updateUser.Org.ID {
 			tempStatus := "Available"
@@ -531,7 +550,7 @@ func (s *SmartContract) UpdateRepairOrderStatus(ctx contractapi.TransactionConte
 			} 
 			ro.InvoiceReferenceNo =  s.CreateInvoice(ctx)
 			ro.Status = "Completed"
-			s.UpdateAsset(ctx, asset.ID, asset.Name, asset.Number, tempStatus, asset.Quantity, asset.Weight, timestamp, updateBy, "", nil, ro)
+			s.UpdateAsset(ctx, asset.ID, asset.Name, asset.Number, tempStatus, asset.Quantity, asset.Weight, timestamp, updateBy, "", nil, ro, asset.Description)
 		}else if ro.Status == "Completed"{
 			result.Message = "RO is already completed"
 			return &result, nil
@@ -542,7 +561,7 @@ func (s *SmartContract) UpdateRepairOrderStatus(ctx contractapi.TransactionConte
 	} else{
 		if ro.Status != "Completed" && ro.Status != "Repairing" {
 			ro.Status = "Incomplete"
-			s.UpdateAsset(ctx, asset.ID, asset.Name, asset.Number, "Available", asset.Quantity, asset.Weight, timestamp, updateBy, "", nil, ro)
+			s.UpdateAsset(ctx, asset.ID, asset.Name, asset.Number, "Available", asset.Quantity, asset.Weight, timestamp, updateBy, "", nil, ro, asset.Description)
 		} else if ro.Status == "Completed"{
 			result.Message = "PO already completed"
 			return &result, nil
@@ -569,7 +588,7 @@ func (s *SmartContract) CreateInvoice(ctx contractapi.TransactionContextInterfac
 	return "INV" + invoiceNo
 }
 
-func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface, number string, name string, owner string, quantity int, weight int,timestamp string, previousAsset string, poReference *PurchaseOrder, roReference *RepairOrder, manualCounter int, createDate string) (bool, error) {
+func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface, number string, name string, owner string, quantity int, weight int, desc string, category string, timestamp string, previousAsset string, poReference *PurchaseOrder, roReference *RepairOrder, manualCounter int, createDate string) (bool, error) {
 	status := "Available"
 
 	entitiesUserEmail, _ := s.QueryUserByEmail(ctx, owner)
@@ -581,6 +600,8 @@ func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface,
 	if poReference == nil && (userOrg.Type != "manufacturer" && (userOrg.Type != "airline" && previousAsset != "")) {
 		return false, nil
 	}
+
+	assetCategory, _ := s.GetCategory(ctx, category)
 
 	if userOrg.Type == "airline"{
 		status = "Not Available"
@@ -605,6 +626,8 @@ func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface,
 		Status: status,
 		Quantity: quantity,
 		Weight: weight,
+		Category: assetCategory,
+		Description: desc,
 		CreateDate: createDate,
 		Timestamp: timestamp,
 		Org: userOrg,
@@ -650,8 +673,8 @@ func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface,
 	}
 }
 
-func (s *SmartContract) CreateAssetAPI(ctx contractapi.TransactionContextInterface, number string, name string, owner string, quantity int, weight int,timestamp string, previousAsset string) (bool, error) {
-	return s.CreateAsset(ctx, number, name, owner, quantity, weight, previousAsset, timestamp, nil, nil, -1, timestamp);
+func (s *SmartContract) CreateAssetAPI(ctx contractapi.TransactionContextInterface, number string, name string, owner string, quantity int, weight int, desc string, category string,timestamp string, previousAsset string) (bool, error) {
+	return s.CreateAsset(ctx, number, name, owner, quantity, weight, desc, category, timestamp, previousAsset, nil, nil, -1, timestamp);
 }
 
 func (s *SmartContract) QueryRO(ctx contractapi.TransactionContextInterface, roId string) (*QueryResultRO, error) {
@@ -831,6 +854,31 @@ func (s *SmartContract) QueryAllAssets(ctx contractapi.TransactionContextInterfa
 	return results, nil
 }
 
+func (s *SmartContract) QueryAllCategories(ctx contractapi.TransactionContextInterface) ([]QueryResultCategory, error) {
+	categoryCounter := getCounter(ctx, "CategoryCounterNo")
+	categoryCounter++
+
+	startKey := "CATEGORY0"
+	endKey := "CATEGORY" + strconv.Itoa(getMaxNumber(categoryCounter))
+
+	resultsIterator, _ := ctx.GetStub().GetStateByRange(startKey, endKey)
+
+	defer resultsIterator.Close()
+
+	results := []QueryResultCategory{}
+
+	for resultsIterator.HasNext() {
+		queryResponse, _ := resultsIterator.Next()
+
+		category := new(AssetCategory)
+		_ = json.Unmarshal(queryResponse.Value, category)
+
+		queryResult := QueryResultCategory{Key: queryResponse.Key, Record: category}
+		results = append(results, queryResult)
+	}
+	return results, nil
+}
+
 func (s *SmartContract) QueryAssetByOwner(ctx contractapi.TransactionContextInterface, owner string) ([]QueryResultAsset, error) {
 	indexName := "owner~assetid"
 
@@ -993,6 +1041,15 @@ func (s *SmartContract) GetOrganization(ctx contractapi.TransactionContextInterf
 	return *org, nil
 }
 
+func (s *SmartContract) GetCategory(ctx contractapi.TransactionContextInterface, id string) (AssetCategory, error) {
+	categoryAsBytes, _ := ctx.GetStub().GetState(id)
+	category := new(AssetCategory)
+	_ = json.Unmarshal(categoryAsBytes, category)
+
+	return *category, nil
+}
+
+
 func (s *SmartContract) SignIn(ctx contractapi.TransactionContextInterface, email string, password string) (*QueryResultSignIn, error) {
 	result := QueryResultSignIn{}
 	result.Status = false
@@ -1131,7 +1188,7 @@ func (s *SmartContract) UpdateAirlineAsset(ctx contractapi.TransactionContextInt
 	return &result, nil
 }
 
-func (s *SmartContract) UpdateAsset(ctx contractapi.TransactionContextInterface, assetId string, name string, number string, status string, quantity int, weight int, timestamp string, updateBy string, newOwner string, poReference *PurchaseOrder, roReference *RepairOrder) (*QueryResultAsset, error) {
+func (s *SmartContract) UpdateAsset(ctx contractapi.TransactionContextInterface, assetId string, name string, number string, status string, quantity int, weight int, timestamp string, updateBy string, newOwner string, poReference *PurchaseOrder, roReference *RepairOrder, desc string) (*QueryResultAsset, error) {
 	result := QueryResultAsset{}
 	result.Status = false;
 
@@ -1165,12 +1222,12 @@ func (s *SmartContract) UpdateAsset(ctx contractapi.TransactionContextInterface,
 		if newOwnerOrg.Type == "airline"{
 			assetCounter := getCounter(ctx, "AssetCounterNo")
 			for i := 0; i < tempQuantity; i++ {
-    			s.CreateAsset(ctx, asset.Number, asset.Name, newOwner, 1, asset.Weight, timestamp, assetId, poReference, roReference, assetCounter, timestamp)
+    			s.CreateAsset(ctx, asset.Number, asset.Name, newOwner, 1, asset.Weight, asset.Description, asset.Category.ID, timestamp, assetId, poReference, roReference, assetCounter, timestamp)
 				assetCounter++
 			}
 			s.incrementCounter(ctx, "AssetCounterNo", assetCounter)
 		} else{
-			s.CreateAsset(ctx, asset.Number, asset.Name, newOwner, tempQuantity, asset.Weight, timestamp, assetId, poReference, roReference, -1, timestamp)
+			s.CreateAsset(ctx, asset.Number, asset.Name, newOwner, tempQuantity, asset.Weight, asset.Description, asset.Category.ID, timestamp, assetId, poReference, roReference, -1, timestamp)
 		}
 	}
 	
@@ -1208,8 +1265,8 @@ func (s *SmartContract) UpdateAsset(ctx contractapi.TransactionContextInterface,
 	return &result, nil
 }
 
-func (s *SmartContract) UpdateAssetAPI(ctx contractapi.TransactionContextInterface, assetId string, name string, number string, status string, quantity int, weight int, timestamp string, updateBy string, newOwner string) (*QueryResultAsset, error) {
-	return s.UpdateAsset(ctx, assetId, name, number, status, quantity, weight, timestamp, updateBy, newOwner, nil, nil)
+func (s *SmartContract) UpdateAssetAPI(ctx contractapi.TransactionContextInterface, assetId string, name string, number string, status string, quantity int, weight int, timestamp string, updateBy string, newOwner string, desc string) (*QueryResultAsset, error) {
+	return s.UpdateAsset(ctx, assetId, name, number, status, quantity, weight, timestamp, updateBy, newOwner, nil, nil, desc)
 }
 
 func (s *SmartContract) CreateUser(ctx contractapi.TransactionContextInterface, name string, email string, org string, role string, address string, password string) (bool, error) {
@@ -1266,6 +1323,21 @@ func (s *SmartContract) UpdateUserRole(ctx contractapi.TransactionContextInterfa
 	return &result, nil
 }
 
+func (s *SmartContract) CreateCategory(ctx contractapi.TransactionContextInterface, name string) (bool, error) {
+	userCounter := getCounter(ctx, "CategoryCounterNo")
+	userCounter++
+
+	var comCategory = AssetCategory{Name: name, ID: "CATEGORY" + strconv.Itoa(userCounter)}
+	comCategoryAsBytes, _ := json.Marshal(comCategory)
+
+	errPut := ctx.GetStub().PutState("CATEGORY" + strconv.Itoa(userCounter), comCategoryAsBytes)
+	if errPut != nil {
+		return false, fmt.Errorf(fmt.Sprintf("Failed to createCategory %s", comCategory.ID))
+	}
+	s.incrementCounter(ctx, "CategoryCounterNo", -1)
+	
+	return true, errPut;
+}
 
 func main() {
 

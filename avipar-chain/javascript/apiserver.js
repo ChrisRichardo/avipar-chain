@@ -144,6 +144,21 @@ app.get('/api/queryallro', async function (req, res)  {
     }
 });
 
+app.get('/api/queryallcategories', async function (req, res)  {
+    try {         
+        var networkObj = await getNetwork(req.orgid, req.username);
+
+        const result = await networkObj.contract.evaluateTransaction('queryAllCategories');
+        console.log(JSON.parse(result));
+        console.log(`Transaction has been evaluated, result is: ${result.toString()}`);
+        res.status(200).json({response: result.toString()});
+} catch (error) {
+        console.error(`Failed to evaluate transaction: ${error}`);
+        res.status(500).json({error: error});
+        process.exit(1);
+    }
+});
+
 app.get('/api/queryallcounters', async function (req, res)  {
         try {
     const ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'manufacturer.example.com', 'connection-manufacturer.json');
@@ -191,7 +206,7 @@ app.post('/api/asset/add', async function (req, res) {
 
         var networkObj = await getNetwork(req.orgid, req.username);
 
-        var resultBuf = await networkObj.contract.submitTransaction('createAssetAPI', req.body.number, req.body.name, req.username, req.body.quantity, req.body.weight, timestamp, "");
+        var resultBuf = await networkObj.contract.submitTransaction('createAssetAPI', req.body.number, req.body.name, req.username, req.body.quantity, req.body.weight, req.body.desc, req.body.category, timestamp, "");
         var result= JSON.parse(resultBuf.toString())
         if(result.toString() == "false"){
                 message = "Asset existed";
@@ -587,15 +602,23 @@ app.get('/api/initdata', async function (req, res)  {
             }
         }
          
+        var categories = [
+            "Electric Components", "Flight Instruments", "Mechanical Components", "Aircraft Materials", "Fluids"
+        ]
+
+        for (var category of categories){
+            await networkObj.contract.submitTransaction('createCategory', category);
+        }
+
         var assets = [
-            ["SPR001", "Bearing", "payo@gmail.com", 10, 2],
-            ["SPR002", "Spacer", "payo@gmail.com", 50, 5],
-            ["SPR003", "Cable M12", "payo@gmail.com", 50, 5],
+            ["SPR001", "Bearing", "payo@gmail.com", 10, 2, "CATEGORY1"],
+            ["SPR002", "Spacer", "payo@gmail.com", 50, 5, "CATEGORY2"],
+            ["SPR003", "Cable M12", "payo@gmail.com", 50, 5, "CATEGORY3"],
         ]
         for (var asset of assets){
             var timestamp = getTimestamp();
             console.log(asset);
-            await networkObj.contract.submitTransaction('createAssetAPI', asset[0], asset[1], asset[2], asset[3], asset[4], timestamp, "");
+            await networkObj.contract.submitTransaction('createAssetAPI', asset[0], asset[1], asset[2], asset[3], asset[4], "desc", asset[5], timestamp, "");
         }
 
         var timestamp = getTimestamp();

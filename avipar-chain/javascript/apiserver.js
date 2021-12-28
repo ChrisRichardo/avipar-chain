@@ -206,7 +206,7 @@ app.post('/api/asset/add', async function (req, res) {
 
         var networkObj = await getNetwork(req.orgid, req.username);
 
-        var resultBuf = await networkObj.contract.submitTransaction('createAssetAPI', req.body.number, req.body.name, req.username, req.body.quantity, req.body.weight, req.body.desc, req.body.category, timestamp, "");
+        var resultBuf = await networkObj.contract.submitTransaction('createAssetAPI', req.body.number, req.body.name, req.username, req.body.quantity, req.body.weight, req.body.desc, req.body.category, timestamp, "", req.body.image);
         var result= JSON.parse(resultBuf.toString())
         if(result.toString() == "false"){
                 message = "Asset existed";
@@ -433,7 +433,7 @@ app.put('/api/asset/update/:asset_index', async function (req, res) {
         todayDateTime.getSeconds().padLeft()].join(':');
 
         var networkObj = await getNetwork(req.orgid, req.username);
-        var resultBuf = await networkObj.contract.submitTransaction('updateAssetAPI', req.params.asset_index, req.body.name, req.body.number, req.body.status, req.body.quantity, req.body.weight, timestamp, req.username, "");
+        var resultBuf = await networkObj.contract.submitTransaction('updateAssetAPI', req.params.asset_index, req.body.name, req.body.number, req.body.status, req.body.quantity, req.body.weight, timestamp, req.username, "", "");
         var result= JSON.parse(resultBuf.toString())
         if(result.Status == false){
             res.status(400).json({response: result.Message});
@@ -618,7 +618,7 @@ app.get('/api/initdata', async function (req, res)  {
         for (var asset of assets){
             var timestamp = getTimestamp();
             console.log(asset);
-            await networkObj.contract.submitTransaction('createAssetAPI', asset[0], asset[1], asset[2], asset[3], asset[4], "desc", asset[5], timestamp, "");
+            await networkObj.contract.submitTransaction('createAssetAPI', asset[0], asset[1], asset[2], asset[3], asset[4], "desc", asset[5], timestamp, "", "", "");
         }
 
         var timestamp = getTimestamp();

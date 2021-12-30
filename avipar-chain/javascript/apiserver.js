@@ -433,7 +433,7 @@ app.put('/api/asset/update/:asset_index', async function (req, res) {
         todayDateTime.getSeconds().padLeft()].join(':');
 
         var networkObj = await getNetwork(req.orgid, req.username);
-        var resultBuf = await networkObj.contract.submitTransaction('updateAssetAPI', req.params.asset_index, req.body.name, req.body.number, req.body.status, req.body.quantity, req.body.weight, timestamp, req.username, "", "");
+        var resultBuf = await networkObj.contract.submitTransaction('updateAssetAPI', req.params.asset_index, req.body.name, req.body.number, req.body.status, req.body.quantity, req.body.weight, timestamp, req.username, "", "", req.body.image);
         var result= JSON.parse(resultBuf.toString())
         if(result.Status == false){
             res.status(400).json({response: result.Message});
@@ -459,7 +459,7 @@ app.put('/api/asset/airline/update/:asset_index', async function (req, res) {
         todayDateTime.getSeconds().padLeft()].join(':');
 
         var networkObj = await getNetwork(req.orgid, req.username);
-        var resultBuf = await networkObj.contract.submitTransaction('updateAirlineAsset', req.params.asset_index, req.body.flightLog, req.body.nextOverhaul, req.body.totalHours, req.body.status, req.username, timestamp);
+        var resultBuf = await networkObj.contract.submitTransaction('updateAirlineAsset', req.params.asset_index, req.body.flightLog, req.body.nextOverhaul, req.body.totalHours, req.body.status, req.username, timestamp, req.body.image);
         var result= JSON.parse(resultBuf.toString())
         if(result.Status == false){
             res.status(400).json({response: result.Message});
@@ -647,13 +647,13 @@ app.get('/api/initdata', async function (req, res)  {
 
         var timestamp = getTimestamp();
         console.log("PO 2 Create");
-        await networkObj.contract.submitTransaction('createPurchaseOrder', "ASSET8", "nadim@gmail.com", 5, timestamp);
+        await networkObj.contract.submitTransaction('createPurchaseOrder', "ASSET7", "nadim@gmail.com", 5, timestamp);
         console.log("PO 2 Update");
         await networkObj.contract.submitTransaction('updatePurchaseOrderStatus', "PO5", "chris@gmail.com", timestamp, true);
 
         var timestamp = getTimestamp();
         console.log("PO 3 Create");
-        await networkObj.contract.submitTransaction('createPurchaseOrder', "ASSET9", "christest@gmail.com", 2, timestamp);
+        await networkObj.contract.submitTransaction('createPurchaseOrder', "ASSET8", "christest@gmail.com", 2, timestamp);
         console.log("PO 3 Update");
         await networkObj.contract.submitTransaction('updatePurchaseOrderStatus', "PO6", "nadim@gmail.com", timestamp, true);
 

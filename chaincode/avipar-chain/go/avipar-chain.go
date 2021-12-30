@@ -1154,7 +1154,7 @@ func (s *SmartContract) TransferAssetOwner(ctx contractapi.TransactionContextInt
 	return &result, nil
 }
 
-func (s *SmartContract) UpdateAirlineAsset(ctx contractapi.TransactionContextInterface, assetId string, flightLog string, nextOverhaul string, totalHoursSpend int, status string, updateBy string, timestamp string) (*QueryResultStatusMessage, error) {
+func (s *SmartContract) UpdateAirlineAsset(ctx contractapi.TransactionContextInterface, assetId string, flightLog string, nextOverhaul string, totalHoursSpend int, status string, updateBy string, timestamp string, imageUrl string) (*QueryResultStatusMessage, error) {
 	result := QueryResultStatusMessage{}
 	result.Status = false;
 
@@ -1175,6 +1175,9 @@ func (s *SmartContract) UpdateAirlineAsset(ctx contractapi.TransactionContextInt
 	}
 	if totalHoursSpend != -1 {
 		asset.TotalHoursSpend = totalHoursSpend
+	}
+	if imageUrl != ""{
+		asset.PictureUrl = imageUrl;
 	}
 	asset.PreviousAsset = "";
 	asset.PurchaseOrderReference = nil;
@@ -1209,9 +1212,6 @@ func (s *SmartContract) UpdateAsset(ctx contractapi.TransactionContextInterface,
 	updateUserOrg := entitiesUpdateUserEmail.Record.Org
 
 	if newOwner != "" {
-		entitiesNewOwnerEmail, _ := s.QueryUserByEmail(ctx, newOwner)
-		newOwnerOrg := entitiesNewOwnerEmail.Record.Org
-
 		tempQuantity := quantity
 		quantity = asset.Quantity - quantity
 		if quantity < 0 {
@@ -1220,16 +1220,8 @@ func (s *SmartContract) UpdateAsset(ctx contractapi.TransactionContextInterface,
 		} else if quantity == 0 {
 			status = "Not Available"
 		}
-		if newOwnerOrg.Type == "airline"{
-			assetCounter := getCounter(ctx, "AssetCounterNo")
-			for i := 0; i < tempQuantity; i++ {
-    			s.CreateAsset(ctx, asset.Number, asset.Name, newOwner, 1, asset.Weight, asset.Description, asset.Category.ID, timestamp, assetId, poReference, roReference, assetCounter, timestamp, asset.PictureUrl)
-				assetCounter++
-			}
-			s.incrementCounter(ctx, "AssetCounterNo", assetCounter)
-		} else{
-			s.CreateAsset(ctx, asset.Number, asset.Name, newOwner, tempQuantity, asset.Weight, asset.Description, asset.Category.ID, timestamp, assetId, poReference, roReference, -1, timestamp, asset.PictureUrl)
-		}
+
+		s.CreateAsset(ctx, asset.Number, asset.Name, newOwner, tempQuantity, asset.Weight, asset.Description, asset.Category.ID, timestamp, assetId, poReference, roReference, -1, timestamp, asset.PictureUrl)
 	}
 	
 	if roReference == nil && (newOwner == "" && userOrg.ID != updateUserOrg.ID){

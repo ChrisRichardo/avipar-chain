@@ -115,7 +115,7 @@ const getAffiliation = async (org) => {
     } else if (org == "nataair") {
         affiliation = 'nataair.department1';
     } else if (org == "lycanairsa") {
-        affiliation = 'lycanairrsa.department1';
+        affiliation = 'lycanairsa.department1';
     } else if (org == "cengkarengairwayengineering") {
         affiliation = 'cengkarengairwayengineering.department1';
     } else if (org == "semco") {

@@ -455,7 +455,7 @@ func (s *SmartContract) UpdatePurchaseOrderStatus(ctx contractapi.TransactionCon
 	return &result, nil
 }
 
-func (s *SmartContract) CreateRepairOrder(ctx contractapi.TransactionContextInterface, assetId string, email string, repairerId string,timestamp string) (bool, error) {
+func (s *SmartContract) CreateRepairOrder(ctx contractapi.TransactionContextInterface, assetId string, email string, repairerId string, timestamp string) (bool, error) {
 	status := "Waiting for Requester Organization"
 
 	entitiesUserEmail, _ := s.QueryUserByEmail(ctx, email)
@@ -1154,15 +1154,9 @@ func (s *SmartContract) TransferAssetOwner(ctx contractapi.TransactionContextInt
 	return &result, nil
 }
 
-func (s *SmartContract) UpdateAirlineAsset(ctx contractapi.TransactionContextInterface, assetId string, flightLog string, nextOverhaul string, totalHoursSpend int, status string, updateBy string, timestamp string, imageUrl string) (*QueryResultStatusMessage, error) {
+func (s *SmartContract) UpdateAirlineAsset(ctx contractapi.TransactionContextInterface, assetId string, flightLog string, nextOverhaul string, totalHoursSpend int, updateBy string, timestamp string, imageUrl string) (*QueryResultStatusMessage, error) {
 	result := QueryResultStatusMessage{}
 	result.Status = false;
-
-	statusCheck := checkStatus(status)
-	if !statusCheck {
-		result.Message = "Status " + status + " not valid"
-		return &result, nil
-	}
 
 	queryAsset, _ := s.QueryAsset(ctx, assetId)
 	asset := queryAsset.Record
@@ -1182,7 +1176,6 @@ func (s *SmartContract) UpdateAirlineAsset(ctx contractapi.TransactionContextInt
 	asset.PreviousAsset = "";
 	asset.PurchaseOrderReference = nil;
 	asset.RepairOrderReference = nil;
-	asset.Status = status;
 	asset.Timestamp = timestamp
 	assetAsBytes, _ := json.Marshal(asset)
 	ctx.GetStub().PutState(assetId, assetAsBytes)

@@ -375,12 +375,19 @@ func (s *SmartContract) CreatePurchaseOrder(ctx contractapi.TransactionContextIn
 		return false, fmt.Errorf(fmt.Sprintf("Failed to create asset: %s", po.ID))
 	}
 
-	indexKey, err := ctx.GetStub().CreateCompositeKey(indexName, []string{po.BuyerEmail, "PO" + strconv.Itoa(poCounter)})
+	indexKey, err := ctx.GetStub().CreateCompositeKey(indexName, []string{po.BuyerOrg.ID, "PO" + strconv.Itoa(poCounter)})
 	if err != nil {
 		return false, fmt.Errorf(fmt.Sprintf("Failed to create asset composite key: %s", po.ID))
 	}
+
+	indexKey2, err := ctx.GetStub().CreateCompositeKey(indexName, []string{po.SellerOrg.ID, "PO" + strconv.Itoa(poCounter)})
+	if err != nil {
+		return false, fmt.Errorf(fmt.Sprintf("Failed to create asset composite key: %s", po.ID))
+	}
+
 	value := []byte{0x00}
 	ctx.GetStub().PutState(indexKey, value)
+	ctx.GetStub().PutState(indexKey2, value)
 
 	s.UpdateAssetAvailableQty(ctx, po.AssetID, po.Quantity, -1)
 
@@ -497,12 +504,19 @@ func (s *SmartContract) CreateRepairOrder(ctx contractapi.TransactionContextInte
 		return false, fmt.Errorf(fmt.Sprintf("Failed to create RO: %s", ro.ID))
 	}
 
-	indexKey, err := ctx.GetStub().CreateCompositeKey(indexName, []string{ro.RequesterEmail, "RO" + strconv.Itoa(roCounter)})
+	indexKey, err := ctx.GetStub().CreateCompositeKey(indexName, []string{ro.RequesterOrg.ID, "RO" + strconv.Itoa(roCounter)})
 	if err != nil {
 		return false, fmt.Errorf(fmt.Sprintf("Failed to create RO composite key: %s", ro.ID))
 	}
+
+	indexKey2, err := ctx.GetStub().CreateCompositeKey(indexName, []string{ro.RepairerOrg.ID, "RO" + strconv.Itoa(roCounter)})
+	if err != nil {
+		return false, fmt.Errorf(fmt.Sprintf("Failed to create RO composite key: %s", ro.ID))
+	}
+	
 	value := []byte{0x00}
 	ctx.GetStub().PutState(indexKey, value)
+	ctx.GetStub().PutState(indexKey2, value)
 
 	s.UpdateAsset(ctx, assetId, "", "", "Requesting Repair", -1, -1, timestamp, email, "", nil, &ro, asset.Description, "")
 
@@ -661,7 +675,7 @@ func (s *SmartContract) CreateAsset(ctx contractapi.TransactionContextInterface,
 		}
 
 		indexName := "owner~assetid"
-		indexKey, err := ctx.GetStub().CreateCompositeKey(indexName, []string{asset.Owner, "ASSET" + strconv.Itoa(assetCounter)})
+		indexKey, err := ctx.GetStub().CreateCompositeKey(indexName, []string{asset.Org.ID, "ASSET" + strconv.Itoa(assetCounter)})
 		if err != nil {
 			return false, fmt.Errorf(fmt.Sprintf("Failed to create asset composite key: %s", asset.Number))
 		}
@@ -718,14 +732,13 @@ func (s *SmartContract) QueryPO(ctx contractapi.TransactionContextInterface, poI
 	return &result, nil
 }
 
-func (s *SmartContract) QueryAllRO(ctx contractapi.TransactionContextInterface) ([]QueryResultRO, error) {
-	assetCounter := getCounter(ctx, "ROCounterNo")
-	assetCounter++
+func (s *SmartContract) QueryAllRO(ctx contractapi.TransactionContextInterface, owner string) ([]QueryResultRO, error) {
+	indexName := "owner~roid"
 
-	startKey := "RO0"
-	endKey := "RO" + strconv.Itoa(getMaxNumber(assetCounter))
-
-	resultsIterator, _ := ctx.GetStub().GetStateByRange(startKey, endKey)
+	resultsIterator, err := ctx.GetStub().GetStateByPartialCompositeKey(indexName, []string{owner})
+	if err != nil {
+		return nil, err
+	}
 
 	defer resultsIterator.Close()
 
@@ -734,8 +747,17 @@ func (s *SmartContract) QueryAllRO(ctx contractapi.TransactionContextInterface) 
 	for resultsIterator.HasNext() {
 		queryResponse, _ := resultsIterator.Next()
 
+		_, compositeKeyParts, err := ctx.GetStub().SplitCompositeKey(queryResponse.Key)
+		if err != nil {
+			return nil, fmt.Errorf("Split composite key error")
+		}
+
+		returnedROId := compositeKeyParts[1]
+
+		roAsBytes, _ := ctx.GetStub().GetState(returnedROId)
+
 		ro := new(RepairOrder)
-		_ = json.Unmarshal(queryResponse.Value, ro)
+		_ = json.Unmarshal(roAsBytes, ro)
 
 		queryResult := QueryResultRO{Key: queryResponse.Key, Record: ro}
 		results = append(results, queryResult)
@@ -743,14 +765,13 @@ func (s *SmartContract) QueryAllRO(ctx contractapi.TransactionContextInterface) 
 	return results, nil
 }
 
-func (s *SmartContract) QueryAllPO(ctx contractapi.TransactionContextInterface) ([]QueryResultPO, error) {
-	assetCounter := getCounter(ctx, "POCounterNo")
-	assetCounter++
+func (s *SmartContract) QueryAllPO(ctx contractapi.TransactionContextInterface, owner string) ([]QueryResultPO, error) {
+	indexName := "owner~poid"
 
-	startKey := "PO0"
-	endKey := "PO" + strconv.Itoa(getMaxNumber(assetCounter))
-
-	resultsIterator, _ := ctx.GetStub().GetStateByRange(startKey, endKey)
+	resultsIterator, err := ctx.GetStub().GetStateByPartialCompositeKey(indexName, []string{owner})
+	if err != nil {
+		return nil, err
+	}
 
 	defer resultsIterator.Close()
 
@@ -759,8 +780,17 @@ func (s *SmartContract) QueryAllPO(ctx contractapi.TransactionContextInterface) 
 	for resultsIterator.HasNext() {
 		queryResponse, _ := resultsIterator.Next()
 
+		_, compositeKeyParts, err := ctx.GetStub().SplitCompositeKey(queryResponse.Key)
+		if err != nil {
+			return nil, fmt.Errorf("Split composite key error")
+		}
+
+		returnedPOId := compositeKeyParts[1]
+
+		poAsBytes, _ := ctx.GetStub().GetState(returnedPOId)
+
 		po := new(PurchaseOrder)
-		_ = json.Unmarshal(queryResponse.Value, po)
+		_ = json.Unmarshal(poAsBytes, po)
 
 		queryResult := QueryResultPO{Key: queryResponse.Key, Record: po}
 		results = append(results, queryResult)
@@ -1180,6 +1210,7 @@ func (s *SmartContract) UpdateAirlineAsset(ctx contractapi.TransactionContextInt
 	assetAsBytes, _ := json.Marshal(asset)
 	ctx.GetStub().PutState(assetId, assetAsBytes)
 
+
 	result.Message = "Spare part " + assetId +  " updated" 
 	result.Status = true
 	return &result, nil
@@ -1307,7 +1338,7 @@ func (s *SmartContract) UpdateUserRole(ctx contractapi.TransactionContextInterfa
 
 	ctx.GetStub().PutState(userId, userAsBytesUpdate)
 
-	result.Message = "Role for  " + user.Email +  " updated" 
+	result.Message = "Role for " + user.Email +  " updated" 
 	result.Status = true
 	return &result, nil
 }

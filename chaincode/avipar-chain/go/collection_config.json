@@ -1,0 +1,9 @@
+[
+    {
+    "name": "collectionRepair",
+    "policy": "OR('PamulangAirwayMSP.member', 'AviparAirlineMSP.member', 'SemcoMSP.member', 'CengkarengAirwayEngineeringMSP.member')",
+    "requiredPeerCount": 0,
+    "maxPeerCount": 3,
+    "blockToLive":1000000
+    }
+]

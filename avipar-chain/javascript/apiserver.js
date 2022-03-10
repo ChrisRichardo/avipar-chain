@@ -118,7 +118,7 @@ app.get('/api/queryallpo', async function (req, res)  {
         try {         
             var networkObj = await getNetwork(req.orgid, req.username);
 
-            const result = await networkObj.contract.evaluateTransaction('queryAllPO');
+            const result = await networkObj.contract.evaluateTransaction('queryAllPO', req.orgid);
             console.log(JSON.parse(result));
             console.log(`Transaction has been evaluated, result is: ${result.toString()}`);
             res.status(200).json({response: result.toString()});
@@ -133,7 +133,7 @@ app.get('/api/queryallro', async function (req, res)  {
     try {         
         var networkObj = await getNetwork(req.orgid, req.username);
 
-        const result = await networkObj.contract.evaluateTransaction('queryAllRO');
+        const result = await networkObj.contract.evaluateTransaction('queryAllRO', req.orgid);
         console.log(JSON.parse(result));
         console.log(`Transaction has been evaluated, result is: ${result.toString()}`);
         res.status(200).json({response: result.toString()});
@@ -201,6 +201,12 @@ app.get('/api/queryallcounters', async function (req, res)  {
     
 app.post('/api/asset/add', async function (req, res) {
     try {
+        if (isArgumentNotExists(req.body.number, req.body.name, req.body.quantity, req.body.weight, req.body.desc, req.body.category)){
+            message = "Missing Parameter";
+            res.status(404).json({response: message});
+            console.log(message);
+            return;
+        }
         var todayDateTime = new Date();   
         var timestamp = todayDateTime.getUTCFullYear() +"-"+ (todayDateTime.getUTCMonth()+1) +"-"+ todayDateTime.getUTCDate() + " " + todayDateTime.getUTCHours() + ":" + todayDateTime.getUTCMinutes() + ":" + todayDateTime.getUTCSeconds();
 
@@ -226,7 +232,7 @@ app.post('/api/asset/add', async function (req, res) {
 app.get('/api/queryassetowned', async function (req, res) {
         try {
             var networkObj = await getNetwork(req.orgid, req.username);
-            const result = await networkObj.contract.evaluateTransaction('queryAssetByOwner', req.username);
+            const result = await networkObj.contract.evaluateTransaction('queryAssetByOwner', req.orgid);
             var message;
             if(result.toString() != "[]"){
                 message = `Transaction has been evaluated, result is: ${result.toString()}`;
@@ -286,6 +292,12 @@ app.get('/api/asset/history/:asset_index', async function (req, res) {
 
 app.post('/api/purchaseorder/add/:order_index', async function (req, res) {
     try {
+        if (isArgumentNotExists(req.body.owner, req.body.quantity)){
+            message = "Missing Parameter";
+            res.status(404).json({response: message});
+            console.log(message);
+            return;
+        }
         var todayDateTime = new Date();   
         var timestamp = [(todayDateTime.getMonth()+1).padLeft(),
         todayDateTime.getDate().padLeft(),
@@ -304,7 +316,7 @@ app.post('/api/purchaseorder/add/:order_index', async function (req, res) {
             res.status(400).json({response: message});
         } else{
             message = "PO Creation suceeded";
-            res.status(200).json({response: result.Message});
+            res.status(200).json({response: message});
         }
         console.log(message);
         await networkObj.gateway.disconnect();
@@ -316,6 +328,12 @@ app.post('/api/purchaseorder/add/:order_index', async function (req, res) {
 
 app.put('/api/purchaseorder/update/:order_index', async function (req, res) {
     try {
+        if (isArgumentNotExists(req.body.updateby, req.body.approve)){
+            message = "Missing Parameter";
+            res.status(404).json({response: message});
+            console.log(message);
+            return;
+        }
         var todayDateTime = new Date();   
         var timestamp = [(todayDateTime.getMonth()+1).padLeft(),
         todayDateTime.getDate().padLeft(),
@@ -330,11 +348,11 @@ app.put('/api/purchaseorder/update/:order_index', async function (req, res) {
         
         var message;
         if(result.toString() == "false"){
-            message = "PO Creation failed";
+            message = "PO Update failed";
             res.status(400).json({response: message});
         } else{
-            message = "PO Creation suceeded";
-            res.status(200).json({response: result.Message});
+            message = "PO Update suceeded";
+            res.status(200).json({response: message});
         }
         console.log(message);
         await networkObj.gateway.disconnect();
@@ -346,6 +364,12 @@ app.put('/api/purchaseorder/update/:order_index', async function (req, res) {
 
 app.post('/api/repairorder/add/:order_index', async function (req, res) {
     try {
+        if (isArgumentNotExists(req.body.owner, req.body.repairerCompany)){
+            message = "Missing Parameter";
+            res.status(404).json({response: message});
+            console.log(message);
+            return;
+        }
         var todayDateTime = new Date();   
         var timestamp = [(todayDateTime.getMonth()+1).padLeft(),
         todayDateTime.getDate().padLeft(),
@@ -364,7 +388,7 @@ app.post('/api/repairorder/add/:order_index', async function (req, res) {
             res.status(400).json({response: message});
         } else{
             message = "RO Creation suceeded";
-            res.status(200).json({response: result.Message});
+            res.status(200).json({response: message});
         }
         console.log(message);
         await networkObj.gateway.disconnect();
@@ -376,6 +400,12 @@ app.post('/api/repairorder/add/:order_index', async function (req, res) {
 
 app.put('/api/repairorder/update/:order_index', async function (req, res) {
     try {
+        if (isArgumentNotExists(req.body.updateby, req.body.approve)){
+            message = "Missing Parameter";
+            res.status(404).json({response: message});
+            console.log(message);
+            return;
+        }
         var todayDateTime = new Date();   
         var timestamp = [(todayDateTime.getMonth()+1).padLeft(),
         todayDateTime.getDate().padLeft(),
@@ -393,7 +423,7 @@ app.put('/api/repairorder/update/:order_index', async function (req, res) {
             res.status(400).json({response: message});
         } else{
             message = "RO Update suceeded";
-            res.status(200).json({response: result.Message});
+            res.status(200).json({response: message});
         }
         console.log(message);
         await networkObj.gateway.disconnect();
@@ -405,6 +435,13 @@ app.put('/api/repairorder/update/:order_index', async function (req, res) {
 
 app.put('/api/asset/transfer/:asset_index', async function (req, res) {
     try {
+        if (isArgumentNotExists(req.body.owner)){
+            message = "Missing Parameter";
+            res.status(404).json({response: message});
+            console.log(message);
+            return;
+        }
+
         var networkObj = await getNetwork(req.orgid, req.username);
 
         var resultBuf = await networkObj.contract.submitTransaction('transferAssetOwner', req.params.asset_index, req.body.owner, timestamp);
@@ -424,6 +461,13 @@ app.put('/api/asset/transfer/:asset_index', async function (req, res) {
 
 app.put('/api/asset/update/:asset_index', async function (req, res) {
     try {
+        if (isArgumentNotExists(req.body.name, req.body.number, req.body.status, req.body.quantity, req.body.weight)){
+            message = "Missing Parameter";
+            res.status(404).json({response: message});
+            console.log(message);
+            return;
+        }
+
         var todayDateTime = new Date();   
         var timestamp = [(todayDateTime.getMonth()+1).padLeft(),
         todayDateTime.getDate().padLeft(),
@@ -450,6 +494,13 @@ app.put('/api/asset/update/:asset_index', async function (req, res) {
 
 app.put('/api/asset/airline/update/:asset_index', async function (req, res) {
     try {
+        if (isArgumentNotExists(req.body.nextOverhaul, req.body.totalHours)){
+            message = "Missing Parameter";
+            res.status(404).json({response: message});
+            console.log(message);
+            return;
+        }
+
         var todayDateTime = new Date();   
         var timestamp = [(todayDateTime.getMonth()+1).padLeft(),
         todayDateTime.getDate().padLeft(),
@@ -476,11 +527,16 @@ app.put('/api/asset/airline/update/:asset_index', async function (req, res) {
 
 app.post('/api/signin/', async function (req, res) {
         try {
+            if (isArgumentNotExists(req.body.email, req.body.password)){
+                message = "Missing Parameter";
+                res.status(404).json({response: message});
+                console.log(message);
+                return;
+            }
             var networkObjQuery = await getNetwork("cirbus", "admin");
             var resultBuf = await networkObjQuery.contract.evaluateTransaction('queryUserByEmail', req.body.email);
             var result= JSON.parse(resultBuf.toString());
             await networkObjQuery.gateway.disconnect();
-            console.log(result);
             if(result.Status == false){
                 message = "User not existed"
                 res.status(400).json({response: message});
@@ -490,11 +546,9 @@ app.post('/api/signin/', async function (req, res) {
                 } else{
                     var networkObj = await getNetwork(result.Record.Org.ID, req.username);
                 }
-                console.log(result.Record);
                     
                 var resultBuf2 = await networkObj.contract.submitTransaction('signIn', req.body.email, req.body.password);
                 var result2= JSON.parse(resultBuf2.toString())
-                console.log(result2);
                 var message;
                 if(result2.Status == false){
                     message = "Wrong user credential"
@@ -523,6 +577,20 @@ app.post('/api/signin/', async function (req, res) {
 
 app.post('/api/createuser/', async function (req, res) {
         try {
+            if (isArgumentNotExists(req.body.name, req.body.email, req.body.org, req.body.role, req.body.address, req.body.password)){
+                message = "Missing Parameter";
+                res.status(404).json({response: message});
+                console.log(message);
+                return;
+            }
+
+            if(isOrgNotExist(req.body.org)){
+                message = "Org Not Existed";
+                res.status(400).json({response: message});
+                console.log(message);
+                return;
+            }
+
             var networkObj = await getNetwork(req.body.org, "admin");
 
             var result = await networkObj.contract.submitTransaction('createUser', req.body.name, req.body.email, req.body.org, req.body.role, req.body.address, req.body.password);
@@ -547,6 +615,13 @@ app.post('/api/createuser/', async function (req, res) {
 
 app.put('/api/user/update/:user_index', async function (req, res) {
     try {
+        if (isArgumentNotExists(req.body.role)){
+            message = "Missing Parameter";
+            res.status(404).json({response: message});
+            console.log(message);
+            return;
+        }
+
         var networkObj = await getNetwork(req.orgid, req.username);
         var resultBuf = await networkObj.contract.submitTransaction('updateUserRole', req.params.user_index, req.body.role);
         var result= JSON.parse(resultBuf.toString())
@@ -652,6 +727,22 @@ function getTimestamp(){
     todayDateTime.getMinutes().padLeft(),
     todayDateTime.getSeconds().padLeft()].join(':');
     return timestamp;
+}
+
+function isArgumentNotExists() {
+    for (var i = 0; i < arguments.length; ++i){
+      if (!arguments[i]) {
+        return true;
+      };
+    }
+    return false;
+}
+
+function isOrgNotExist(org){
+    if (org == "cirbus" || org == "soeing" || org == "nataair" || org == "lycanairsa" || org == "cengkarengairwayengineering" || org == "semco" || org == "aviparairline" || org == "pamulangairway") {
+       return false;
+    } else
+        return true;
 }
 
 app.listen(8080);
